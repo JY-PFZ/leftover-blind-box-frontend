@@ -7,15 +7,15 @@ export const useUserStore = defineStore('user', () => {
   // 状态
   const token = ref(localStorage.getItem('token') || '')
   const username = ref(localStorage.getItem('username') || '')
-  const publicKey = ref('') // 存储从后端获取的公钥
+  const publicKey = ref('')
+  const userProfile = ref(null) // 存储用户详细信息
   const isLoggedIn = computed(() => !!token.value)
 
-  // 1. 获取公钥
+  // 1. 获取公钥 (无变化)
   const fetchPublicKey = async () => {
     try {
       const response = await axios.get('/api/auth/key')
       publicKey.value = response.data.data
-      // 保存到 localStorage（可选）
       localStorage.setItem('publicKey', publicKey.value)
       return publicKey.value
     } catch (error) {
@@ -24,40 +24,61 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 2. 用公钥加密密码
+  // 2. 加密密码 (无变化)
   const encryptPassword = (password) => {
     if (!publicKey.value) {
       throw new Error('Public key not loaded')
     }
     const encrypt = new JSEncrypt()
     encrypt.setPublicKey(publicKey.value)
-    return encrypt.encrypt(password) // 返回 base64 编码的加密字符串
+    return encrypt.encrypt(password)
   }
 
-  // 3. 登录（先获取公钥，再加密，再登录）
+  // 获取用户个人资料 (已根据最新 API 文档修正)
+  const fetchUserProfile = async () => {
+    if (!token.value) return
+
+    try {
+      const response = await axios.get('/api/user', {
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        }
+      })
+      
+      // 修正：从返回的 records 数组中获取第一个用户对象
+      if (response.data && response.data.data && response.data.data.records && response.data.data.records.length > 0) {
+        userProfile.value = response.data.data.records[0];
+      } else {
+        throw new Error("User profile not found in API response");
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error)
+      logout()
+    }
+  }
+
+  // 3. 登录 (无变化)
   const login = async (usernameInput, password) => {
     try {
-      // 确保有公钥
       if (!publicKey.value) {
         await fetchPublicKey()
       }
-
-      // 加密密码
       const encryptedPassword = encryptPassword(password)
-
-      // 发送登录请求
       const response = await axios.post('/api/auth/login', {
         username: usernameInput,
-        encryptedPassword // 注意：后端要接收 encryptedPassword
+        encryptedPassword
       })
 
-      const { token: userToken, username: userUsername } = response.data
+      const { token: userToken, username: userUsername } = response.data.data
 
       token.value = userToken
       username.value = userUsername || usernameInput
 
       localStorage.setItem('token', userToken)
       localStorage.setItem('username', username.value)
+
+      await fetchUserProfile()
 
       return { success: true, data: response.data }
     } catch (error) {
@@ -68,21 +89,25 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 4. 登出
+  // 4. 登出 (无变化)
   const logout = () => {
     token.value = ''
     username.value = ''
+    userProfile.value = null
     localStorage.removeItem('token')
     localStorage.removeItem('username')
   }
 
-  // 5. 初始化
-  const initialize = () => {
+  // 5. 初始化 (无变化)
+  const initializeUser = async () => {
     const savedToken = localStorage.getItem('token')
     const savedUsername = localStorage.getItem('username')
     const savedPublicKey = localStorage.getItem('publicKey')
-    if (savedToken) token.value = savedToken
-    if (savedUsername) username.value = savedUsername
+    if (savedToken) {
+        token.value = savedToken
+        username.value = savedUsername
+        await fetchUserProfile()
+    }
     if (savedPublicKey) publicKey.value = savedPublicKey
   }
 
@@ -90,10 +115,12 @@ export const useUserStore = defineStore('user', () => {
     token,
     username,
     publicKey,
+    userProfile,
     isLoggedIn,
     fetchPublicKey,
     login,
     logout,
-    initialize
+    initializeUser
   }
 })
+
