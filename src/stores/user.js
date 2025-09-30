@@ -1,126 +1,80 @@
-import { ref, computed } from 'vue'
-import { defineStore } from 'pinia'
-import axios from 'axios'
-import { JSEncrypt } from 'jsencrypt'
+import { ref, computed } from 'vue';
+import { defineStore } from 'pinia';
+// 恢复使用我们配置好的 apiClient，让代码更优雅
+import apiClient from '../services/axiosConfig'; 
 
 export const useUserStore = defineStore('user', () => {
-  // 状态
-  const token = ref(localStorage.getItem('token') || '')
-  const username = ref(localStorage.getItem('username') || '')
-  const publicKey = ref('')
-  const userProfile = ref(null) // 存储用户详细信息
-  const isLoggedIn = computed(() => !!token.value)
+  const token = ref(localStorage.getItem('token') || '');
+  const username = ref(localStorage.getItem('username') || '');
+  const userProfile = ref(null);
+  const isLoggedIn = computed(() => !!token.value);
 
-  // 1. 获取公钥 (无变化)
-  const fetchPublicKey = async () => {
-    try {
-      const response = await axios.get('/api/auth/key')
-      publicKey.value = response.data.data
-      localStorage.setItem('publicKey', publicKey.value)
-      return publicKey.value
-    } catch (error) {
-      console.error('Failed to fetch public key:', error)
-      throw error
-    }
-  }
+  const updateToken = (newToken) => {
+    token.value = newToken;
+    localStorage.setItem('token', newToken);
+  };
 
-  // 2. 加密密码 (无变化)
-  const encryptPassword = (password) => {
-    if (!publicKey.value) {
-      throw new Error('Public key not loaded')
-    }
-    const encrypt = new JSEncrypt()
-    encrypt.setPublicKey(publicKey.value)
-    return encrypt.encrypt(password)
-  }
-
-  // 获取用户个人资料 (已根据最新 API 文档修正)
   const fetchUserProfile = async () => {
-    if (!token.value) return
-
+    if (!token.value) return;
     try {
-      const response = await axios.get('/api/user', {
-        headers: {
-          Authorization: `Bearer ${token.value}`
-        }
-      })
-      
-      // 修正：从返回的 records 数组中获取第一个用户对象
-      if (response.data && response.data.data && response.data.data.records && response.data.data.records.length > 0) {
+      // 恢复使用 apiClient 发起请求
+      const response = await apiClient.get('/api/user');
+      if (response.data?.data?.records?.length > 0) {
         userProfile.value = response.data.data.records[0];
-      } else {
-        throw new Error("User profile not found in API response");
       }
-
     } catch (error) {
-      console.error('Failed to fetch user profile:', error)
-      logout()
+      console.error('获取用户信息失败:', error);
     }
-  }
+  };
 
-  // 3. 登录 (无变化)
   const login = async (usernameInput, password) => {
     try {
-      if (!publicKey.value) {
-        await fetchPublicKey()
-      }
-      const encryptedPassword = encryptPassword(password)
-      const response = await axios.post('/api/auth/login', {
+      // 恢复使用 apiClient 发起请求，它会自动通过 Vite 代理
+      // 发送的是明文密码，因为后端现在接收明文
+      const response = await apiClient.post('/api/auth/login', {
         username: usernameInput,
-        encryptedPassword
-      })
+        password: password
+      });
 
-      const { token: userToken, username: userUsername } = response.data.data
-
-      token.value = userToken
-      username.value = userUsername || usernameInput
-
-      localStorage.setItem('token', userToken)
-      localStorage.setItem('username', username.value)
-
-      await fetchUserProfile()
-
-      return { success: true, data: response.data }
+      const userToken = response.headers['x-new-token'];
+      if (userToken) {
+        updateToken(userToken);
+        username.value = usernameInput;
+        localStorage.setItem('username', usernameInput);
+        
+        await fetchUserProfile();
+        return { success: true };
+      } else {
+        throw new Error("登录成功，但未收到 Token。");
+      }
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        'Login failed (check network or public key)'
-      return { success: false, message }
+      console.error("登录请求失败，原始错误:", error);
+      const message = error.response?.data?.message || '登录失败，请检查网络或服务器状态';
+      return { success: false, message };
     }
-  }
+  };
 
-  // 4. 登出 (无变化)
   const logout = () => {
-    token.value = ''
-    username.value = ''
-    userProfile.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('username')
-  }
+    token.value = '';
+    username.value = '';
+    userProfile.value = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+  };
 
-  // 5. 初始化 (无变化)
   const initializeUser = async () => {
-    const savedToken = localStorage.getItem('token')
-    const savedUsername = localStorage.getItem('username')
-    const savedPublicKey = localStorage.getItem('publicKey')
+    const savedToken = localStorage.getItem('token');
+    const savedUsername = localStorage.getItem('username');
     if (savedToken) {
-        token.value = savedToken
-        username.value = savedUsername
-        await fetchUserProfile()
+      token.value = savedToken;
+      username.value = savedUsername;
+      await fetchUserProfile();
     }
-    if (savedPublicKey) publicKey.value = savedPublicKey
-  }
+  };
 
   return {
-    token,
-    username,
-    publicKey,
-    userProfile,
-    isLoggedIn,
-    fetchPublicKey,
-    login,
-    logout,
-    initializeUser
-  }
-})
+    token, username, userProfile, isLoggedIn,
+    login, logout, initializeUser, updateToken
+  };
+});
 
