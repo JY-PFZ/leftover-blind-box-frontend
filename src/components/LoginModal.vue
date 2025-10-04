@@ -1,195 +1,124 @@
 <template>
-<<<<<<< HEAD
-  <!-- 只点遮罩空白处才关闭 -->
-  <div class="overlay" @click.self="$emit('close')">
-    <div class="modal">
-      <h2>Login</h2>
-
-      <form @submit.prevent="onSubmit" class="form">
-        <input
-          v-model.trim="username"
-          type="text"
-          placeholder="Email / Username"
-          required
-        />
-        <input
-          v-model.trim="password"
-          type="password"
-          placeholder="Password"
-          minlength="6"
-          required
-        />
-
-        <button class="primary" :disabled="loading">
-          {{ loading ? 'Logging in…' : 'Login' }}
-        </button>
-        <button class="ghost" type="button" @click="$emit('close')" :disabled="loading">
-          Cancel
-        </button>
-
-        <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
-=======
-  <div class="overlay" @click="$emit('close')">
-    <div class="login-modal" @click.stop>
-      <h2>Login to Sugar Rush</h2>
+  <div class="modal-backdrop" @click.self="close">
+    <div class="modal-content">
+      <h2>用户登录</h2>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label>Username</label>
-          <input v-model="username" type="text" placeholder="Enter your username" required />
+          <label for="username">用户名</label>
+          <input id="username" v-model="username" type="text" placeholder="请输入用户名" required>
         </div>
         <div class="form-group">
-          <label>Password</label>
-          <input v-model="password" type="password" placeholder="Enter your password" required />
+          <label for="password">密码</label>
+          <input id="password" v-model="password" type="password" placeholder="请输入密码" required>
         </div>
-        <button type="submit" :disabled="loading">
-          {{ loading ? 'Logging in...' : 'Login' }}
+        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+        <button type="submit" :disabled="isLoading">
+          {{ isLoading ? '登录中...' : '登录' }}
         </button>
-        <button type="button" @click="$emit('close')" class="cancel-btn">
-          Cancel
-        </button>
->>>>>>> c58538bbe15c6cb1563317a18b1b686b96df0310
       </form>
+      <button class="close-btn" @click="close">关闭</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-<<<<<<< HEAD
-// 如果你没有配置 @ 别名，请把下一行改成：import { useUserStore } from '../stores/user'
-import { useUserStore } from '@/stores/user'
+import { ref } from 'vue';
+import { useUserStore } from '@/stores/user';
 
-const emit = defineEmits(['close'])
-const user = useUserStore()
-=======
-import { useUserStore } from '../stores/user'  // ← 引入 store
-import { useRouter } from 'vue-router'
+const emit = defineEmits(['close']);
+const userStore = useUserStore();
 
-const userStore = useUserStore()
-const router = useRouter()
->>>>>>> c58538bbe15c6cb1563317a18b1b686b96df0310
-
-const username = ref('')
-const password = ref('')
-const loading = ref(false)
-<<<<<<< HEAD
-const errorMsg = ref('')
-
-const onSubmit = async () => {
-  errorMsg.value = ''
-  loading.value = true
-  const res = await user.login(username.value, password.value)
-  loading.value = false
-  if (res.success) {
-    emit('close')
-  } else {
-    errorMsg.value = res.message || 'Login failed'
-=======
-
-const emit = defineEmits(['close'])
+const username = ref('');
+const password = ref('');
+const isLoading = ref(false);
+const errorMessage = ref('');
 
 const handleLogin = async () => {
-  loading.value = true
-  const result = await userStore.login(username.value, password.value)
-  loading.value = false
+  isLoading.value = true;
+  errorMessage.value = '';
+  const result = await userStore.login(username.value, password.value);
+  isLoading.value = false;
 
   if (result.success) {
-    alert('Login successful!')
-    emit('close')
-    router.push('/')  // 可改为 /dashboard
+    close();
   } else {
-    alert('Login failed: ' + result.message)
->>>>>>> c58538bbe15c6cb1563317a18b1b686b96df0310
+    errorMessage.value = result.message || '登录失败，请稍后再试。';
   }
-}
+};
+
+const close = () => {
+  if (!isLoading.value) {
+    emit('close');
+  }
+};
 </script>
 
 <style scoped>
-<<<<<<< HEAD
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: grid; place-items: center; z-index: 1001; }
-.modal { width: 360px; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
-.form { display: grid; gap: 10px; }
-input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-.primary { padding: 10px; border: none; border-radius: 8px; background: #007bff; color: #fff; cursor: pointer; }
-.ghost { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; }
-.error { color: #e74c3c; font-size: 13px; }
-=======
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1001;
+.modal-backdrop {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 2000;
 }
-
-.login-modal {
-  background: white;
-  padding: 30px;
+.modal-content {
+  background-color: white;
+  padding: 30px 40px;
   border-radius: 12px;
-  width: 400px;
-  max-width: 90%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 400px;
   text-align: center;
 }
-
-.login-modal h2 {
-  margin-bottom: 20px;
+h2 {
+  margin-bottom: 25px;
   color: #333;
-  font-size: 24px;
 }
-
 .form-group {
+  margin-bottom: 20px;
   text-align: left;
-  margin-bottom: 15px;
 }
-
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   font-weight: bold;
   color: #555;
 }
-
 .form-group input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
 }
-
-.form-group input:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-button {
-  padding: 10px 20px;
-  margin: 10px 5px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+.error-message {
+  color: #e74c3c;
+  margin-bottom: 15px;
   font-weight: bold;
 }
-
-button[type="submit"] {
-  background: #007bff;
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
   color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
-
-button[type="submit"]:disabled {
-  background: #6ea8ff;
+button:disabled {
+  background-color: #aaa;
   cursor: not-allowed;
 }
-
-.cancel-btn {
-  background: #95a5a6;
-  color: white;
+button:hover:not(:disabled) {
+  background-color: #0056b3;
 }
->>>>>>> c58538bbe15c6cb1563317a18b1b686b96df0310
+.close-btn {
+  margin-top: 15px;
+  background-color: #6c757d;
+}
+.close-btn:hover {
+  background-color: #5a6268;
+}
 </style>
+
