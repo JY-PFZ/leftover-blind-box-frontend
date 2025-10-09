@@ -35,13 +35,15 @@
       <div class="actions flex gap-2">
         <button 
           class="btn add flex-1" 
-          @click="$emit('add', product)"
+          @click="handleAdd"
+          @mousedown="() => console.log('Add to Cart button mousedown')"
+          @mouseup="() => console.log('Add to Cart button mouseup')"
         >
           Add to Cart
         </button>
         <button 
           class="btn view" 
-          @click="$emit('open', product)"
+          @click="handleView"
         >
           <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -55,14 +57,47 @@
 </template>
 
 <script setup>
-defineProps({ 
-  product: { 
-    type: Object, 
-    required: true 
-  } 
+import { computed } from 'vue'
+import { mockLogin as doMockLogin } from '@/mocks/data.js'
+import { useUserStore } from '@/stores/user'
+
+const props = defineProps({ 
+  product: { type: Object, required: true },
+  requireLogin: { type: Boolean, default: true }
 })
 
-defineEmits(['add', 'open'])
+const user = useUserStore()
+const isLoggedIn = computed(() => user.isLoggedIn)
+const emit = defineEmits(['add', 'open'])
+
+function handleAdd() {
+  console.log('Add to Cart clicked!', {
+    requireLogin: props.requireLogin,
+    isLoggedIn: isLoggedIn.value,
+    product: props.product
+  })
+  
+  if (props.requireLogin && !isLoggedIn.value) {
+    console.log('User not logged in, opening login modal')
+    window.dispatchEvent(new Event('open-login'))
+    return
+  }
+  
+  console.log('Adding product to cart:', props.product)
+  emit('add', props.product)
+}
+
+function handleView() {
+  if (props.requireLogin && !isLoggedIn.value) {
+    window.dispatchEvent(new Event('open-login'))
+    return
+  }
+  emit('open', props.product)
+}
+
+function mockLogin() {
+  doMockLogin(user)
+}
 </script>
 
 <style scoped>
@@ -126,6 +161,7 @@ defineEmits(['add', 'open'])
   line-height: 1;
   transition: all 0.2s ease;
 }
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
 
 /* Add to Cart 按钮：突出视觉层级 */
 .btn.add {

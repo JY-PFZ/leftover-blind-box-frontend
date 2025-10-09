@@ -1,48 +1,55 @@
 import { createRouter, createWebHistory } from 'vue-router'
-<<<<<<< HEAD
+import { useUserStore } from '@/stores/user'
 
-// 懒加载
-const HomeView = () => import('../views/HomeView.vue')
-const MerchantView = () => import('../views/MerchantView.vue')
-
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  scrollBehavior() {
-    return { top: 0 }
-  },
-=======
-import HomeView from '../views/HomeView.vue'
+const HomeView = () => import('@/views/HomeView.vue')
+const ProfileView = () => import('@/views/ProfileView.vue')
+const OrderHistoryView = () => import('@/views/OrderHistoryView.vue')
+const CartView = () => import('@/views/CartView.vue') // 引入新的购物车视图
+const MerchantView = () => import('@/views/MerchantView.vue') // 引入商家页面
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
->>>>>>> c58538bbe15c6cb1563317a18b1b686b96df0310
   routes: [
     {
       path: '/',
       name: 'home',
-<<<<<<< HEAD
       component: HomeView,
-      meta: { title: '首页 - Magic Bag', requiresAuth: false }
     },
     {
-      path: '/merchant/:id',
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/order-history',
+      name: 'order-history',
+      component: OrderHistoryView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/cart', // 添加购物车路由
+      name: 'cart',
+      component: CartView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/merchant/:id', // 添加商家页面路由
       name: 'merchant',
       component: MerchantView,
-      meta: { title: '商家详情 - Magic Bag', requiresAuth: false },
-      // 把 id 转成数字并作为 props 传给组件
-      props: route => ({ id: Number(route.params.id) })
+      meta: { requiresAuth: true }
     }
   ]
 })
 
+// 导航守卫，保护需要登录的路由
 router.beforeEach((to, from, next) => {
-  if (to.meta.title) document.title = to.meta.title
-  next()
-=======
-      component: HomeView
-    }
-  ],
->>>>>>> c58538bbe15c6cb1563317a18b1b686b96df0310
-})
+  const userStore = useUserStore();
+  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    next({ name: 'home' }); // 如果未登录，则重定向到首页
+  } else {
+    next();
+  }
+});
 
 export default router
