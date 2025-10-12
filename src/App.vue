@@ -19,7 +19,12 @@
           {{ user.isLoggedIn ? 'Mock登出' : 'Mock登录' }}
         </button>
         <button @click="showLogin = true" class="login-btn">Login</button>
-        <RouterLink to="/cart" class="cart-btn">🛒 Cart</RouterLink>
+        <RouterLink to="/cart" class="cart-btn">
+          🛒 Cart
+          <span v-if="cartCount > 0" class="cart-badge" :class="{ 'animate': cartBadgeAnimate }">
+            {{ cartCount }}
+          </span>
+        </RouterLink>
       </div>
     </nav>
 
@@ -35,14 +40,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import LoginModal from './components/LoginModal.vue';
 import SignupModal from './components/SignupModal.vue';
 import { useUserStore } from './stores/user';
+import { useCartStore } from './stores/cart';
 
 const showLogin = ref(false);
 const showSignup = ref(false);
 const user = useUserStore();
+const cart = useCartStore();
+const cartBadgeAnimate = ref(false);
+
+// 计算购物车商品总数
+const cartCount = computed(() => {
+  return cart.items.reduce((total, item) => total + item.qty, 0);
+});
 
 const handleMockLogin = () => {
   if (user.isLoggedIn) {
@@ -62,18 +75,31 @@ const handleOpenLogin = () => {
   showLogin.value = true;
 };
 
-onMounted(() => {
+// 监听购物车添加事件
+const handleCartAdd = () => {
+  console.log('Cart item added, triggering badge animation')
+  cartBadgeAnimate.value = true;
+  // 动画结束后重置状态
+  setTimeout(() => {
+    cartBadgeAnimate.value = false;
+  }, 600);
+};
+
+onMounted(async () => {
   window.addEventListener('open-login', handleOpenLogin);
+  window.addEventListener('cart-item-added', handleCartAdd);
   // 初始化用户状态
-  user.initialize();
+  await user.initialize();
   console.log('App mounted, user state:', {
     isLoggedIn: user.isLoggedIn,
-    username: user.username.value
+    username: user.username.value,
+    userLocation: user.userLocation.value
   });
 });
 
 onUnmounted(() => {
   window.removeEventListener('open-login', handleOpenLogin);
+  window.removeEventListener('cart-item-added', handleCartAdd);
 });
 </script>
 
@@ -174,11 +200,62 @@ body {
 .cart-btn {
   background: #f39c12;
   color: white;
+  position: relative;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .cart-btn:hover {
   background: #e67e22;
   transform: translateY(-1px);
+}
+
+/* 购物车徽章样式 */
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+/* 徽章动画效果 */
+.cart-badge.animate {
+  animation: cartBadgeBounce 0.6s ease-out;
+}
+
+@keyframes cartBadgeBounce {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  75% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* 响应式 */

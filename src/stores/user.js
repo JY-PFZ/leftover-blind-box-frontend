@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '../utils/api'
 import { JSEncrypt } from 'jsencrypt'
+import { getUserLocation, setManualLocation } from '../utils/geoUtils'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -9,6 +10,7 @@ export const useUserStore = defineStore('user', () => {
   const username = ref(localStorage.getItem('username') || '')
   const publicKey = ref(localStorage.getItem('publicKey') || '')
   const userProfile = ref(null)
+  const userLocation = ref(null)
   const isLoggedIn = computed(() => !!token.value)
 
   // 1) 获取公钥 - 暂时禁用，避免连接后端
@@ -119,8 +121,33 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 7) 初始化（刷新恢复）
-  const initialize = () => {
+  // 7) 获取用户位置
+  const fetchUserLocation = async () => {
+    try {
+      console.log('正在获取用户位置...')
+      const location = await getUserLocation()
+      userLocation.value = location
+      console.log('用户位置获取成功:', location)
+      return location
+    } catch (error) {
+      console.error('获取用户位置失败:', error)
+      // 使用默认位置（新加坡）
+      const defaultLocation = { latitude: 1.2966, longitude: 103.7764 }
+      userLocation.value = defaultLocation
+      return defaultLocation
+    }
+  }
+
+  // 8) 手动设置用户位置
+  const setUserLocation = (latitude, longitude) => {
+    const location = setManualLocation(latitude, longitude)
+    userLocation.value = location
+    console.log('手动设置用户位置:', location)
+    return location
+  }
+
+  // 8) 初始化（刷新恢复）
+  const initialize = async () => {
     const savedToken = localStorage.getItem('token')
     const savedUsername = localStorage.getItem('username')
     const savedPublicKey = localStorage.getItem('publicKey')
@@ -139,6 +166,9 @@ export const useUserStore = defineStore('user', () => {
     }
     if (savedUsername) username.value = savedUsername
     if (savedPublicKey) publicKey.value = savedPublicKey
+    
+    // 初始化时获取用户位置
+    await fetchUserLocation()
   }
 
   return {
@@ -146,12 +176,15 @@ export const useUserStore = defineStore('user', () => {
     username,
     publicKey,
     userProfile,
+    userLocation,
     isLoggedIn,
     fetchPublicKey,
     login,
     logout,
     mockLogin,
     updateUserProfile,
+    fetchUserLocation,
+    setUserLocation,
     initialize
   }
 })

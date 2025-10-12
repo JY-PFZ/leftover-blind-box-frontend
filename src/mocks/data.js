@@ -31,7 +31,9 @@ export const mockMerchants = [
     reviewCount: 156,
     address: "123 Sweet Street, Candy City",
     openingHours: "Mon-Sun: 9:00 AM - 8:00 PM",
-    phone: "+1 (555) 123-4567"
+    phone: "+1 (555) 123-4567",
+    latitude: 1.2966,  // 新加坡纬度
+    longitude: 103.7764  // 新加坡经度
   },
   { 
     id: 2, 
@@ -42,7 +44,9 @@ export const mockMerchants = [
     reviewCount: 203,
     address: "456 Chocolate Avenue, Cocoa Town",
     openingHours: "Mon-Sat: 10:00 AM - 9:00 PM, Sun: 11:00 AM - 7:00 PM",
-    phone: "+1 (555) 234-5678"
+    phone: "+1 (555) 234-5678",
+    latitude: 1.3048,  // 新加坡不同区域
+    longitude: 103.8318
   },
   { 
     id: 3, 
@@ -53,11 +57,14 @@ export const mockMerchants = [
     reviewCount: 89,
     address: "789 Fruit Lane, Healthy Valley",
     openingHours: "Mon-Fri: 8:00 AM - 6:00 PM, Sat-Sun: 9:00 AM - 5:00 PM",
-    phone: "+1 (555) 345-6789"
+    phone: "+1 (555) 345-6789",
+    latitude: 1.3521,  // 新加坡不同区域
+    longitude: 103.8198
   },
 ]
 
-export const mockProducts = [
+// 创建产品数据，确保商家引用正确
+const createMockProducts = () => [
   // merchant 1
   { id: 101, title: "Candy 1", price: 4.99, description: "Yummy candy.", merchant: mockMerchants[0] },
   { id: 102, title: "Candy 2", price: 4.99, description: "Yummy candy.", merchant: mockMerchants[0] },
@@ -69,6 +76,8 @@ export const mockProducts = [
   { id: 301, title: "Fruit Snack 1", price: 5.99, description: "Dried mango.", merchant: mockMerchants[2] },
   { id: 302, title: "Fruit Snack 2", price: 5.49, description: "Dried strawberry.", merchant: mockMerchants[2] },
 ]
+
+export const mockProducts = createMockProducts()
 
 // Mock评论数据
 export const mockReviews = [

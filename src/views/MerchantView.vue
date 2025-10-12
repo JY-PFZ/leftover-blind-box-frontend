@@ -51,14 +51,26 @@
                   </div>
                 </div>
                 
-                <!-- 评分区域 -->
-                <div class="flex items-center mb-6" v-if="merchant.rating !== undefined">
-                  <div class="flex text-yellow-400 text-2xl drop-shadow-lg">
-                    <span v-for="i in 5" :key="i" class="animate-pulse" :style="{ animationDelay: `${i * 0.1}s` }">★</span>
+                <!-- 评分和距离区域 -->
+                <div class="flex flex-wrap items-center gap-4 mb-6">
+                  <!-- 评分 -->
+                  <div class="flex items-center" v-if="merchant.rating !== undefined">
+                    <div class="flex text-yellow-400 text-2xl drop-shadow-lg">
+                      <span v-for="i in 5" :key="i" class="animate-pulse" :style="{ animationDelay: `${i * 0.1}s` }">★</span>
+                    </div>
+                    <div class="ml-4 px-4 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-full shadow-md">
+                      <span class="text-2xl font-bold text-gray-800">{{ Number(merchant.rating).toFixed(1) }}</span>
+                      <span class="text-gray-600 ml-2">({{ merchant.reviewCount }}条评价)</span>
+                    </div>
                   </div>
-                  <div class="ml-4 px-4 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-full shadow-md">
-                    <span class="text-2xl font-bold text-gray-800">{{ Number(merchant.rating).toFixed(1) }}</span>
-                    <span class="text-gray-600 ml-2">({{ merchant.reviewCount }}条评价)</span>
+                  
+                  <!-- 距离 -->
+                  <div v-if="merchantDistance" class="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full shadow-md">
+                    <div class="flex items-center gap-2">
+                      <span class="text-green-600 text-xl">📍</span>
+                      <span class="text-lg font-bold text-gray-800">{{ merchantDistance }}</span>
+                      <span class="text-gray-600 text-sm">距离您</span>
+                    </div>
                   </div>
                 </div>
                 
@@ -395,6 +407,7 @@ import ProductModal from '@/components/ProductModal.vue'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
 import { mockProducts, mockMerchants, mockReviews } from '@/mocks/data.js'
+import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
 
 const route = useRoute()
 const cart = useCartStore()
@@ -413,6 +426,13 @@ const newReview = ref({
 
 // 从路由参数获取商家ID
 const merchantId = computed(() => Number(route.params.id))
+
+// 计算商家距离
+const merchantDistance = computed(() => {
+  if (!merchant.value || !user.userLocation.value) return null
+  const distance = getMerchantDistance(merchant.value, user.userLocation.value)
+  return distance ? formatDistance(distance) : null
+})
 
 function openProduct(p){ selected.value = p; showProduct.value = true }
 

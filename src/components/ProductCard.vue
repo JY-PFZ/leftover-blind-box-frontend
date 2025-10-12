@@ -31,6 +31,13 @@
       </div>
       <p class="description text-gray-500 text-sm mb-4 line-clamp-2">{{ product.description || 'Delicious candy made with premium ingredients.' }}</p>
       
+      <!-- 商家距离信息 -->
+      <div v-if="merchantDistance" class="mb-3 flex items-center gap-2 text-xs text-gray-500">
+        <span class="text-green-500">📍</span>
+        <span>{{ product.merchant.name }}</span>
+        <span class="text-green-600 font-medium">{{ merchantDistance }}</span>
+      </div>
+      
       <!-- 操作按钮区：明确交互 + 视觉层级 -->
       <div class="actions flex gap-2">
         <button 
@@ -60,6 +67,7 @@
 import { computed } from 'vue'
 import { mockLogin as doMockLogin } from '@/mocks/data.js'
 import { useUserStore } from '@/stores/user'
+import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
 
 const props = defineProps({ 
   product: { type: Object, required: true },
@@ -68,6 +76,14 @@ const props = defineProps({
 
 const user = useUserStore()
 const isLoggedIn = computed(() => user.isLoggedIn)
+
+// 计算商家距离
+const merchantDistance = computed(() => {
+  if (!props.product.merchant || !user.userLocation || !user.userLocation.value) return null
+  const distance = getMerchantDistance(props.product.merchant, user.userLocation.value)
+  return distance ? formatDistance(distance) : null
+})
+
 const emit = defineEmits(['add', 'open'])
 
 function handleAdd() {
@@ -85,6 +101,9 @@ function handleAdd() {
   
   console.log('Adding product to cart:', props.product)
   emit('add', props.product)
+  
+  // 触发购物车徽章动画
+  window.dispatchEvent(new Event('cart-item-added'))
 }
 
 function handleView() {
