@@ -49,6 +49,7 @@
               <div class="m-name">{{ product.merchant.name }}</div>
               <div class="m-sub">
                 <span v-if="product.merchant.rating">★ {{ product.merchant.rating }}</span>
+                <span v-if="merchantDistance" class="distance">📍 {{ merchantDistance }}</span>
                 <span v-if="product.merchant.address"> · {{ product.merchant.address }}</span>
               </div>
             </div>
@@ -93,10 +94,13 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { RouterLink } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import Modal from './Modal.vue'
 import { useCartStore } from '@/stores/cart'
+import { useUserStore } from '@/stores/user'
+import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -104,6 +108,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['close'])
 const cart = useCartStore()
+const user = useUserStore()
+const { userLocation } = storeToRefs(user)
 
 /* 图片集合处理 */
 const images = computed(() => {
@@ -121,6 +127,28 @@ const rating = computed(()=> props.product?.rating || props.product?.merchant?.r
 const priceNow = computed(()=> Number(props.product?.price || 0).toFixed(2))
 const priceOld = computed(()=> Number(props.product?.originalPrice || 0).toFixed(2))
 
+/* 距离计算 */
+const merchantDistance = computed(() => {
+  console.log('ProductModal distance calculation:', {
+    product: props.product,
+    merchant: props.product?.merchant,
+    userLocation: userLocation.value,
+    hasMerchant: !!props.product?.merchant,
+    hasUserLocation: !!userLocation.value
+  })
+  
+  // 检查用户位置是否存在
+  if (!props.product?.merchant || !userLocation.value) {
+    console.log('Missing merchant or userLocation')
+    return null
+  }
+  
+  const distance = getMerchantDistance(props.product.merchant, userLocation.value)
+  console.log('Calculated distance:', distance)
+  
+  return distance ? formatDistance(distance) : null
+})
+
 /* 规格与数量控制 */
 const variants = computed(()=> props.product?.variants ?? [])
 const selectedVariant = ref(variants.value[0] || null)
@@ -128,6 +156,21 @@ const qty = ref(1)
 function inc(){ qty.value++ }
 function dec(){ if(qty.value>1) qty.value-- }
 watch(()=>props.open, o => { if(o){ qty.value=1; activeIndex.value=0 } })
+
+// 监听用户位置变化，确保距离计算更新
+watchEffect(() => {
+  if (props.open && props.product?.merchant && userLocation.value) {
+    console.log('ProductModal: User location changed, recalculating distance')
+  }
+})
+
+// 监听模态框打开，确保用户位置已获取
+watch(() => props.open, async (isOpen) => {
+  if (isOpen && !userLocation.value) {
+    console.log('ProductModal: Modal opened but no user location, fetching...')
+    await user.fetchUserLocation()
+  }
+})
 
 /* 购物车与购买交互 */
 function addToCart(){
@@ -193,6 +236,7 @@ function buyNow(){
 .meta{ flex:1; }
 .m-name{ font-weight:800; }
 .m-sub{ color:#777; font-size:12px; margin-top:2px; }
+.distance{ color:#3b82f6; font-weight:600; }
 .shop{
   text-decoration:none; background:#ff9800; color:#fff; font-weight:900; padding:8px 12px;
   border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.06); transition: background .2s, transform .06s;

@@ -107,103 +107,104 @@
               <button class="btn-secondary" @click="clearCart">
                 Clear Cart
               </button>
-              <button class="btn-primary" @click="showPaymentModal = true">
-                💳 Proceed to Checkout
+              <button class="btn-primary" @click="checkout">
+                Proceed to Checkout
               </button>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- 支付模态框 -->
-    <div v-if="showPaymentModal" class="payment-modal-overlay" @click="closePaymentModal">
-      <div class="payment-modal" @click.stop>
-        <div class="payment-header">
-          <h2>💳 选择支付方式</h2>
-          <button class="close-btn" @click="closePaymentModal">×</button>
-        </div>
-        
-        <div class="payment-content">
-          <div class="order-summary">
-            <h3>订单详情</h3>
-            <div class="order-items">
-              <div v-for="item in cart.items" :key="item.id" class="order-item">
-                <span>{{ item.title }} × {{ item.qty }}</span>
-                <span>${{ (item.price * item.qty).toFixed(2) }}</span>
-              </div>
-            </div>
-            <div class="order-total">
-              <span>总计: ${{ cart.total.toFixed(2) }}</span>
+  <!-- 支付模态框 -->
+  <div v-if="showPaymentModal" class="payment-modal-overlay" @click.self="closePaymentModal">
+    <div class="payment-modal">
+      <div class="payment-header">
+        <h2>💳 选择支付方式</h2>
+        <button class="close-btn" @click="closePaymentModal">×</button>
+      </div>
+      
+      <div class="payment-content">
+        <!-- 订单摘要 -->
+        <div class="order-summary">
+          <h3>订单摘要</h3>
+          <div class="summary-items">
+            <div v-for="item in cart.items" :key="item.id" class="summary-item">
+              <span class="item-name">{{ item.title }}</span>
+              <span class="item-qty">×{{ item.qty }}</span>
+              <span class="item-price">${{ (item.price * item.qty).toFixed(2) }}</span>
             </div>
           </div>
+          <div class="summary-total">
+            <span>总计: ${{ cart.total.toFixed(2) }}</span>
+          </div>
+        </div>
 
-          <div class="payment-methods">
-            <h3>支付方式</h3>
-            <div class="payment-options">
-              <button 
-                class="payment-option" 
-                :class="{ active: selectedPayment === 'paypal' }"
-                @click="selectedPayment = 'paypal'"
-              >
+        <!-- 支付方式选择 -->
+        <div class="payment-methods">
+          <h3>选择支付方式</h3>
+          <div class="payment-options">
+            <label class="payment-option" :class="{ active: selectedPayment === 'paypal' }">
+              <input type="radio" v-model="selectedPayment" value="paypal" />
+              <div class="payment-info">
                 <div class="payment-icon">💳</div>
-                <div class="payment-info">
+                <div class="payment-details">
                   <div class="payment-name">PayPal</div>
-                  <div class="payment-desc">国际通用支付</div>
+                  <div class="payment-desc">使用PayPal账户支付</div>
                 </div>
-              </button>
+              </div>
+            </label>
 
-              <button 
-                class="payment-option" 
-                :class="{ active: selectedPayment === 'wechat' }"
-                @click="selectedPayment = 'wechat'"
-              >
+            <label class="payment-option" :class="{ active: selectedPayment === 'wechat' }">
+              <input type="radio" v-model="selectedPayment" value="wechat" />
+              <div class="payment-info">
                 <div class="payment-icon">💚</div>
-                <div class="payment-info">
+                <div class="payment-details">
                   <div class="payment-name">微信支付</div>
-                  <div class="payment-desc">扫码支付</div>
+                  <div class="payment-desc">使用微信扫码支付</div>
                 </div>
-              </button>
+              </div>
+            </label>
 
-              <button 
-                class="payment-option" 
-                :class="{ active: selectedPayment === 'alipay' }"
-                @click="selectedPayment = 'alipay'"
-              >
+            <label class="payment-option" :class="{ active: selectedPayment === 'alipay' }">
+              <input type="radio" v-model="selectedPayment" value="alipay" />
+              <div class="payment-info">
                 <div class="payment-icon">🔵</div>
-                <div class="payment-info">
+                <div class="payment-details">
                   <div class="payment-name">支付宝</div>
-                  <div class="payment-desc">扫码支付</div>
+                  <div class="payment-desc">使用支付宝扫码支付</div>
                 </div>
-              </button>
+              </div>
+            </label>
 
-              <button 
-                class="payment-option" 
-                :class="{ active: selectedPayment === 'mock' }"
-                @click="selectedPayment = 'mock'"
-              >
+            <label class="payment-option" :class="{ active: selectedPayment === 'mock' }">
+              <input type="radio" v-model="selectedPayment" value="mock" />
+              <div class="payment-info">
                 <div class="payment-icon">🧪</div>
-                <div class="payment-info">
-                  <div class="payment-name">模拟支付</div>
-                  <div class="payment-desc">测试用</div>
+                <div class="payment-details">
+                  <div class="payment-name">Mock Pay (测试)</div>
+                  <div class="payment-desc">模拟支付，用于测试</div>
                 </div>
-              </button>
-            </div>
-          </div>
-
-          <div class="payment-actions">
-            <button class="btn-secondary" @click="closePaymentModal">
-              取消
-            </button>
-            <button 
-              class="btn-primary" 
-              @click="processPayment"
-              :disabled="!selectedPayment"
-            >
-              {{ selectedPayment ? `使用${getPaymentName(selectedPayment)}支付` : '请选择支付方式' }}
-            </button>
+              </div>
+            </label>
           </div>
         </div>
+      </div>
+
+      <!-- 支付按钮 -->
+      <div class="payment-actions">
+        <button class="btn-cancel" @click="closePaymentModal" :disabled="isProcessing">
+          取消
+        </button>
+        <button 
+          class="btn-pay" 
+          @click="processPayment" 
+          :disabled="!selectedPayment || isProcessing"
+        >
+          <span v-if="isProcessing">处理中...</span>
+          <span v-else>立即支付 ${{ cart.total.toFixed(2) }}</span>
+        </button>
       </div>
     </div>
   </div>
@@ -213,14 +214,8 @@
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
-
 const cart = useCartStore()
 const user = useUserStore()
-
-// 支付相关状态
-const showPaymentModal = ref(false)
-const selectedPayment = ref('')
-const isProcessing = ref(false)
 
 // 更新商品数量
 function updateQuantity(id, newQty) {
@@ -232,9 +227,9 @@ function updateQuantity(id, newQty) {
     cart.remove(id)
   } else {
     // 找到商品并更新数量
-    const itemIndex = cart.items.findIndex(i => i.id === id)
-    if (itemIndex >= 0) {
-      cart.items[itemIndex].qty = newQty
+    const item = cart.items.find(i => i.id === id)
+    if (item) {
+      item.qty = newQty
     }
   }
 }
@@ -261,6 +256,24 @@ function clearCart() {
   }
 }
 
+// 结算相关状态
+const showPaymentModal = ref(false)
+const selectedPayment = ref('')
+const isProcessing = ref(false)
+
+// 结算
+function checkout() {
+  if (!user.isLoggedIn) {
+    window.dispatchEvent(new Event('open-login'))
+    return
+  }
+  if (cart.items.length === 0) {
+    alert('购物车为空，无法结算')
+    return
+  }
+  showPaymentModal.value = true
+}
+
 // 关闭支付模态框
 function closePaymentModal() {
   showPaymentModal.value = false
@@ -269,14 +282,14 @@ function closePaymentModal() {
 }
 
 // 获取支付方式名称
-function getPaymentName(paymentType) {
+function getPaymentName(payment) {
   const names = {
-    paypal: 'PayPal',
-    wechat: '微信支付',
-    alipay: '支付宝',
-    mock: '模拟支付'
+    'paypal': 'PayPal',
+    'wechat': '微信支付',
+    'alipay': '支付宝',
+    'mock': 'Mock Pay (测试)'
   }
-  return names[paymentType] || '未知'
+  return names[payment] || payment
 }
 
 // 处理支付
@@ -285,55 +298,38 @@ async function processPayment() {
     alert('请选择支付方式')
     return
   }
-
-  if (!user.isLoggedIn) {
-    window.dispatchEvent(new Event('open-login'))
-    return
-  }
-
+  
   isProcessing.value = true
-
+  
   try {
     // 模拟支付处理
     await new Promise(resolve => setTimeout(resolve, 2000))
-
+    
     // 创建订单数据
     const orderData = {
-      id: Date.now().toString(),
-      userId: user.username,
-      items: cart.items.map(item => ({
-        productId: item.id,
-        title: item.title,
-        price: item.price,
-        quantity: item.qty,
-        merchantId: item.merchantId
-      })),
+      id: Date.now(),
+      items: cart.items,
       total: cart.total,
       paymentMethod: selectedPayment.value,
+      paymentName: getPaymentName(selectedPayment.value),
       status: 'completed',
       createdAt: new Date().toISOString()
     }
-
+    
     // 这里可以调用后端API保存订单
     // await api.post('/orders', orderData)
     
-    console.log('订单创建成功:', orderData)
-
-    // 显示成功消息
-    alert(`🎉 支付成功！\n\n订单号: ${orderData.id}\n支付方式: ${getPaymentName(selectedPayment.value)}\n金额: $${cart.total.toFixed(2)}\n\n感谢您的购买！`)
-
+    alert(`支付成功！\n订单号: ${orderData.id}\n支付方式: ${orderData.paymentName}\n金额: $${orderData.total.toFixed(2)}`)
+    
     // 清空购物车
     cart.clear()
     
     // 关闭模态框
     closePaymentModal()
-
-    // 跳转到订单历史页面
-    // router.push('/order-history')
-
+    
   } catch (error) {
-    console.error('支付失败:', error)
-    alert('支付失败，请重试')
+    console.error('支付处理失败:', error)
+    alert('支付处理失败，请稍后重试')
   } finally {
     isProcessing.value = false
   }
@@ -649,41 +645,30 @@ async function processPayment() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .payment-modal {
   background: white;
   border-radius: 16px;
-  max-width: 600px;
-  width: 100%;
+  width: 90%;
+  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
 }
 
 .payment-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 24px 0 24px;
+  padding: 24px 24px 0;
   border-bottom: 1px solid #eee;
   margin-bottom: 24px;
 }
@@ -695,33 +680,32 @@ async function processPayment() {
 }
 
 .close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
   width: 32px;
   height: 32px;
-  border: none;
-  background: #f5f5f5;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
   transition: all 0.2s;
 }
 
 .close-btn:hover {
-  background: #e5e5e5;
-  transform: scale(1.1);
+  background: #f5f5f5;
+  color: #333;
 }
 
 .payment-content {
-  padding: 0 24px 24px 24px;
+  padding: 0 24px;
 }
 
 .order-summary {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .order-summary h3 {
@@ -730,26 +714,45 @@ async function processPayment() {
   color: #333;
 }
 
-.order-items {
-  margin-bottom: 16px;
+.summary-items {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
 }
 
-.order-item {
+.summary-item {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 14px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.item-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.item-qty {
   color: #666;
+  margin: 0 12px;
 }
 
-.order-total {
-  display: flex;
-  justify-content: space-between;
-  font-size: 18px;
+.item-price {
+  font-weight: 600;
+  color: #e74c3c;
+}
+
+.summary-total {
+  text-align: right;
+  font-size: 20px;
   font-weight: bold;
   color: #e74c3c;
-  border-top: 1px solid #ddd;
-  padding-top: 12px;
 }
 
 .payment-methods h3 {
@@ -759,55 +762,57 @@ async function processPayment() {
 }
 
 .payment-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .payment-option {
   display: flex;
   align-items: center;
-  gap: 16px;
   padding: 16px;
-  border: 2px solid #e5e5e5;
+  border: 2px solid #eee;
   border-radius: 12px;
-  background: white;
   cursor: pointer;
   transition: all 0.2s;
-  text-align: left;
+  background: white;
 }
 
 .payment-option:hover {
-  border-color: #3b82f6;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-color: #007bff;
+  background: #f8f9ff;
 }
 
 .payment-option.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  border-color: #007bff;
+  background: #e3f2fd;
+}
+
+.payment-option input[type="radio"] {
+  margin-right: 16px;
+  transform: scale(1.2);
+}
+
+.payment-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
 .payment-icon {
   font-size: 24px;
+  margin-right: 12px;
   width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0f0;
-  border-radius: 8px;
+  text-align: center;
 }
 
-.payment-info {
+.payment-details {
   flex: 1;
 }
 
 .payment-name {
-  font-size: 16px;
   font-weight: 600;
+  font-size: 16px;
   color: #333;
   margin-bottom: 4px;
 }
@@ -820,27 +825,83 @@ async function processPayment() {
 .payment-actions {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  padding: 24px;
+  border-top: 1px solid #eee;
+  margin-top: 24px;
 }
 
-.payment-actions .btn-primary:disabled {
-  opacity: 0.5;
+.btn-cancel, .btn-pay {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-pay {
+  background: #28a745;
+  color: white;
+}
+
+.btn-pay:hover:not(:disabled) {
+  background: #218838;
+}
+
+.btn-cancel:disabled, .btn-pay:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .payment-modal {
-    margin: 10px;
-    max-height: calc(100vh - 20px);
+    width: 95%;
+    margin: 20px;
   }
   
-  .payment-options {
-    grid-template-columns: 1fr;
+  .payment-header {
+    padding: 20px 20px 0;
+  }
+  
+  .payment-content {
+    padding: 0 20px;
   }
   
   .payment-actions {
+    padding: 20px;
     flex-direction: column;
+  }
+  
+  .btn-cancel, .btn-pay {
+    width: 100%;
   }
 }
 </style>

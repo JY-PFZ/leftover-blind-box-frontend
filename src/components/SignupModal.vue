@@ -60,12 +60,20 @@ const loading = ref(false)
 const errorMsg = ref('')
 const successMsg = ref('')
 
-// 获取公钥 - 使用Mock公钥，避免连接后端
+// 获取公钥
 const fetchPublicKey = async () => {
-  console.log('fetchPublicKey called - using mock public key')
-  // 使用Mock公钥，避免连接后端
-  const mockKey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----'
-  return mockKey
+  try {
+    console.log('fetchPublicKey called - connecting to backend')
+    const response = await api.get('/auth/key')
+    const key = response.data.data
+    console.log('✅ 公钥获取成功')
+    return key
+  } catch (error) {
+    console.error('❌ 获取公钥失败，使用Mock公钥:', error)
+    // 降级到Mock公钥
+    const mockKey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----'
+    return mockKey
+  }
 }
 
 // 公钥加密

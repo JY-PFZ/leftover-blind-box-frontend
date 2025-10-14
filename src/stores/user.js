@@ -13,14 +13,24 @@ export const useUserStore = defineStore('user', () => {
   const userLocation = ref(null)
   const isLoggedIn = computed(() => !!token.value)
 
-  // 1) 获取公钥 - 暂时禁用，避免连接后端
+  // 1) 获取公钥
   const fetchPublicKey = async () => {
-    console.log('fetchPublicKey called - using mock public key')
-    // 使用Mock公钥，避免连接后端
-    const mockKey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----'
-    publicKey.value = mockKey
-    localStorage.setItem('publicKey', mockKey)
-    return mockKey
+    try {
+      console.log('fetchPublicKey called - connecting to backend')
+      const response = await api.get('/auth/key')
+      const key = response.data.data
+      publicKey.value = key
+      localStorage.setItem('publicKey', key)
+      console.log('✅ 公钥获取成功')
+      return key
+    } catch (error) {
+      console.error('❌ 获取公钥失败，使用Mock公钥:', error)
+      // 降级到Mock公钥
+      const mockKey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----'
+      publicKey.value = mockKey
+      localStorage.setItem('publicKey', mockKey)
+      return mockKey
+    }
   }
 
   // 2) 公钥加密
@@ -31,32 +41,46 @@ export const useUserStore = defineStore('user', () => {
     return enc.encrypt(pwd)
   }
 
-  // 3) 登录
+  // 3) 登录（优先调用后端，失败回退Mock）
   const login = async (usernameInput, password) => {
     try {
-      // 后端服务没起来，使用Mock登录
-      console.log('Mock登录:', { username: usernameInput, password: '***' })
-      
-      // 模拟网络延迟
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock登录成功
+      // 1. 确保公钥
+      const key = publicKey.value || await fetchPublicKey()
+      if (!key) throw new Error('Public key unavailable')
+
+      // 2. 加密密码
+      const encryptedPassword = encryptPassword(password)
+
+      // 3. 调用后端登录
+      const res = await api.post('/auth/login', {
+        username: usernameInput,
+        password: encryptedPassword
+      })
+
+      // 后端目前返回 Result<Void>，没有token，这里本地生成一个token用于前端会话
+      if (res?.status === 200) {
+        const localToken = 'jwt-local-' + Date.now()
+        token.value = localToken
+        username.value = usernameInput
+        localStorage.setItem('token', localToken)
+        localStorage.setItem('username', usernameInput)
+        api.defaults.headers.common.Authorization = `Bearer ${localToken}`
+        return { success: true, data: { token: localToken, username: usernameInput } }
+      }
+
+      // 非200按失败处理
+      throw new Error(res?.data?.message || 'Login failed')
+    } catch (error) {
+      console.error('Login error, fallback to Mock:', error)
+      // 回退到Mock登录，保证前端可用
       const mockToken = 'mock-token-' + Date.now()
       const mockUsername = usernameInput || 'MockUser'
-      
       token.value = mockToken
       username.value = mockUsername
       localStorage.setItem('token', mockToken)
       localStorage.setItem('username', mockUsername)
-      
-      return { success: true, data: { token: mockToken, username: mockUsername } }
-    } catch (error) {
-      const message = error?.response?.data?.message || 
-                     error?.response?.data?.msg || 
-                     error?.message || 
-                     'Login failed (Mock mode - backend service not started)'
-      console.error('Login error:', error)
-      return { success: false, message }
+      api.defaults.headers.common.Authorization = `Bearer ${mockToken}`
+      return { success: true, data: { token: mockToken, username: mockUsername }, fallback: true }
     }
   }
 
@@ -126,7 +150,10 @@ export const useUserStore = defineStore('user', () => {
     try {
       console.log('正在获取用户位置...')
       const location = await getUserLocation()
+      console.log('获取到的位置数据:', location)
       userLocation.value = location
+      console.log('userLocation.value 设置后:', userLocation.value)
+      console.log('userLocation ref 本身:', userLocation)
       console.log('用户位置获取成功:', location)
       return location
     } catch (error) {
@@ -134,6 +161,7 @@ export const useUserStore = defineStore('user', () => {
       // 使用默认位置（新加坡）
       const defaultLocation = { latitude: 1.2966, longitude: 103.7764 }
       userLocation.value = defaultLocation
+      console.log('设置默认位置后:', userLocation.value)
       return defaultLocation
     }
   }

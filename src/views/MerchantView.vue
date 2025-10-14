@@ -402,6 +402,7 @@
 <script setup>
 import { ref, watchEffect, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import ProductCard from '@/components/ProductCard.vue'
 import ProductModal from '@/components/ProductModal.vue'
 import { useCartStore } from '@/stores/cart'
@@ -412,6 +413,7 @@ import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
 const route = useRoute()
 const cart = useCartStore()
 const user = useUserStore()
+const { userLocation } = storeToRefs(user)
 const merchant = ref(null)
 const products = ref([])
 const reviews = ref([])
@@ -429,8 +431,21 @@ const merchantId = computed(() => Number(route.params.id))
 
 // 计算商家距离
 const merchantDistance = computed(() => {
-  if (!merchant.value || !user.userLocation.value) return null
-  const distance = getMerchantDistance(merchant.value, user.userLocation.value)
+  console.log('MerchantView distance calculation:', {
+    merchant: merchant.value,
+    userLocation: userLocation.value,
+    hasMerchant: !!merchant.value,
+    hasUserLocation: !!userLocation.value
+  })
+  
+  if (!merchant.value || !userLocation.value) {
+    console.log('MerchantView: Missing merchant or userLocation')
+    return null
+  }
+  
+  const distance = getMerchantDistance(merchant.value, userLocation.value)
+  console.log('MerchantView calculated distance:', distance)
+  
   return distance ? formatDistance(distance) : null
 })
 

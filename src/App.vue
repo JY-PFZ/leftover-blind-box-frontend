@@ -14,11 +14,26 @@
         <li><a href="#">Contact Us</a></li>
       </ul>
       <div class="actions">
-        <button @click="showSignup = true" class="signup-btn">注册</button>
+        <!-- 未登录状态：显示注册和登录按钮 -->
+        <template v-if="!user.isLoggedIn">
+          <button @click="showSignup = true" class="signup-btn">注册</button>
+          <button @click="showLogin = true" class="login-btn">Login</button>
+        </template>
+        
+        <!-- 已登录状态：显示用户信息和登出按钮 -->
+        <template v-else>
+          <div class="user-info">
+            <span class="username">👤 {{ user.username }}</span>
+          </div>
+          <button @click="handleLogout" class="logout-btn">Logout</button>
+        </template>
+        
+        <!-- Mock登录按钮（始终显示，用于测试） -->
         <button @click="handleMockLogin" class="mock-btn" @mousedown="() => console.log('Mock login button mousedown')">
           {{ user.isLoggedIn ? 'Mock登出' : 'Mock登录' }}
         </button>
-        <button @click="showLogin = true" class="login-btn">Login</button>
+        
+        <!-- 购物车按钮 -->
         <RouterLink to="/cart" class="cart-btn">
           🛒 Cart
           <span v-if="cartCount > 0" class="cart-badge" :class="{ 'animate': cartBadgeAnimate }">
@@ -67,6 +82,14 @@ const handleMockLogin = () => {
     console.log('Mock login')
     user.mockLogin()
   }
+};
+
+// 处理真实登出
+const handleLogout = () => {
+  console.log('User logout clicked')
+  user.logout()
+  // 可以添加登出成功提示
+  alert('已成功登出！')
 };
 
 // 监听全局登录事件
@@ -194,6 +217,40 @@ body {
 
 .login-btn:hover {
   background: #0056b3;
+  transform: translateY(-1px);
+}
+
+/* 用户信息样式 */
+.user-info {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #e8f5e8;
+  border-radius: 6px;
+  border: 1px solid #28a745;
+}
+
+.username {
+  color: #155724;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* 登出按钮样式 */
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: #c82333;
   transform: translateY(-1px);
 }
 

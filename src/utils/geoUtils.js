@@ -130,27 +130,44 @@ export function getMerchantDistance(merchant, userLocation) {
  */
 export function sortMerchantsByDistance(merchants, userLocation) {
   if (!userLocation) {
+    console.log('sortMerchantsByDistance: No user location')
     return merchants
   }
 
-  return merchants
+  console.log('sortMerchantsByDistance: User location:', userLocation)
+  
+  const merchantsWithDistance = merchants
     .map(merchant => ({
       ...merchant,
       distance: getMerchantDistance(merchant, userLocation)
     }))
-    .sort((a, b) => {
-      // 如果两个商家都有距离，按距离排序
-      if (a.distance !== null && b.distance !== null) {
-        return a.distance - b.distance
-      }
-      // 如果只有一个有距离，有距离的排在前面
-      if (a.distance !== null && b.distance === null) {
-        return -1
-      }
-      if (a.distance === null && b.distance !== null) {
-        return 1
-      }
-      // 如果都没有距离，保持原有顺序
-      return 0
-    })
+  
+  console.log('Merchants with distance:', merchantsWithDistance.map(m => ({
+    name: m.name,
+    distance: m.distance,
+    coordinates: `${m.latitude}, ${m.longitude}`
+  })))
+  
+  const sorted = merchantsWithDistance.sort((a, b) => {
+    // 如果两个商家都有距离，按距离排序
+    if (a.distance !== null && b.distance !== null) {
+      return a.distance - b.distance
+    }
+    // 如果只有一个有距离，有距离的排在前面
+    if (a.distance !== null && b.distance === null) {
+      return -1
+    }
+    if (a.distance === null && b.distance !== null) {
+      return 1
+    }
+    // 如果都没有距离，保持原有顺序
+    return 0
+  })
+  
+  console.log('Sorted merchants:', sorted.map(m => ({
+    name: m.name,
+    distance: m.distance
+  })))
+  
+  return sorted
 }
