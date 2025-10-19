@@ -10,10 +10,17 @@
       />
       <div v-else class="thumb-fallback w-full h-120 bg-gradient-to-r from-cream-200 to-pink-200"></div>
       
-      <!-- 产品标签（热销/新品等） -->
-      <div v-if="product.tags && product.tags.length" class="absolute top-3 left-3 flex flex-wrap gap-1">
+      <!-- 产品标签（分类标签） -->
+      <div class="absolute top-3 left-3 flex flex-wrap gap-1">
         <span 
-          v-for="tag in product.tags.slice(0, 2)" 
+          v-if="product.category" 
+          class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white text-xs px-2 py-1 rounded-full shadow-sm font-medium"
+        >
+          {{ product.category }}
+        </span>
+        <span 
+          v-if="product.tags && product.tags.length" 
+          v-for="tag in product.tags.slice(0, 1)" 
           :key="tag" 
           class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full shadow-sm"
         >

@@ -1,11 +1,45 @@
 <template>
   <section class="wrap">
     <div class="title-row">
-      <h1>All Products</h1>
+      <h1>{{ selectedCategory === 'all' ? 'All Products' : productCategories.find(c => c.id === selectedCategory)?.name + ' Products' }}</h1>
       <div class="sub">Items: {{ products.length }}</div>
     </div>
 
-    <!-- 排序选项 -->
+    <!-- 分类选择器 -->
+    <div class="category-controls mb-6 p-6 bg-gradient-to-r from-white via-orange-50 to-yellow-50 rounded-2xl shadow-lg border border-gray-100">
+      <div class="flex flex-col gap-4">
+        <!-- 标题区域 -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-md">
+            <span class="text-white text-lg">🏷️</span>
+          </div>
+          <span class="text-gray-700 font-bold text-lg">商品分类</span>
+        </div>
+        
+        <!-- 分类按钮组 -->
+        <div class="flex flex-wrap gap-3">
+          <button 
+            v-for="category in productCategories"
+            :key="category.id"
+            @click="changeCategory(category.id)"
+            :class="[
+              'group relative px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105',
+              selectedCategory === category.id
+                ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg shadow-orange-200' 
+                : 'bg-white text-gray-600 hover:bg-orange-50 hover:text-orange-600 border border-gray-200 hover:border-orange-300 shadow-sm hover:shadow-md'
+            ]"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-lg">{{ category.icon }}</span>
+              <span>{{ category.name }}</span>
+            </div>
+            <div v-if="selectedCategory === category.id" class="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full animate-pulse"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 排序选项 - 美化设计 -->
     <div class="sort-controls mb-8 p-6 bg-gradient-to-r from-white via-blue-50 to-purple-50 rounded-2xl shadow-lg border border-gray-100">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div class="flex items-center gap-3">
@@ -69,8 +103,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { mockProducts, mockMerchants } from '@/mocks/data.js'
+import { ref, computed, onMounted } from 'vue'
+import { mockProducts, mockMerchants, productCategories } from '@/mocks/data.js'
 import ProductCard from '@/components/ProductCard.vue'
 import ProductModal from '@/components/ProductModal.vue'
 import MerchantModal from '@/components/MerchantModal.vue'
@@ -83,9 +117,10 @@ import { sortMerchantsByDistance } from '@/utils/geoUtils'
 const cart = useCartStore()
 const user = useUserStore()
 const { userLocation } = storeToRefs(user)
-const sortBy = ref('default')
-const selected = ref(null)
+const sortBy = ref('default') // 'default', 'distance-near', 'distance-far'
+const selectedCategory = ref('all') // 选中的分类
 const showProduct = ref(false)
+const selected = ref(null)
 const selectedMerchant = ref(null)
 const showMerchant = ref(false)
 const merchantProducts = ref([])
@@ -93,28 +128,51 @@ const merchantProducts = ref([])
 // --- 排序逻辑 ---
 const SORT_MODES = ['default', 'distance-near', 'distance-far', 'price-asc', 'price-desc'];
 
+// 产品列表 - 根据排序方式和分类返回不同结果
 const products = computed(() => {
-  const baseProducts = [...mockProducts];
-
+  console.log('Products computed:', {
+    sortBy: sortBy.value,
+    selectedCategory: selectedCategory.value,
+    hasUserLocation: !!userLocation.value,
+    userLocation: userLocation.value
+  })
+  
+  // 先按分类过滤
+  let filteredProducts = mockProducts
+  if (selectedCategory.value !== 'all') {
+    const categoryMap = {
+      'candy': '糖果',
+      'chocolate': '巧克力', 
+      'fruit': '果干',
+      'bread': '面包',
+      'nuts': '坚果',
+      'cookies': '饼干',
+      'snacks': '零食'
+    }
+    const categoryName = categoryMap[selectedCategory.value]
+    filteredProducts = mockProducts.filter(p => p.category === categoryName)
+  }
+  
+  // 再按排序方式处理
   switch (sortBy.value) {
     case 'price-asc':
-      return baseProducts.sort((a, b) => a.price - b.price);
+      return filteredProducts.sort((a, b) => a.price - b.price);
     case 'price-desc':
-      return baseProducts.sort((a, b) => b.price - a.price);
+      return filteredProducts.sort((a, b) => b.price - a.price);
     case 'distance-near':
     case 'distance-far':
-      if (!userLocation.value) return baseProducts;
+      if (!userLocation.value) return filteredProducts;
       const sortedMerchants = sortMerchantsByDistance(mockMerchants, userLocation.value);
       if (sortBy.value === 'distance-far') sortedMerchants.reverse();
       
       const distanceSortedProducts = [];
       sortedMerchants.forEach(merchant => {
-        const prods = baseProducts.filter(p => p.merchant && p.merchant.id === merchant.id);
+        const prods = filteredProducts.filter(p => p.merchant && p.merchant.id === merchant.id);
         distanceSortedProducts.push(...prods);
       });
       return distanceSortedProducts;
     default:
-      return baseProducts;
+      return filteredProducts;
   }
 });
 
@@ -147,6 +205,11 @@ const sortText = computed(() => ({
   'default': 'Default Sort', 'distance-near': 'Distance (Near)', 'distance-far': 'Distance (Far)',
   'price-asc': 'Price (Low to High)', 'price-desc': 'Price (High to Low)'
 }[sortBy.value]));
+
+// 切换分类
+const changeCategory = (categoryId) => {
+  selectedCategory.value = categoryId
+}
 
 // --- 事件处理 ---
 function openProduct(product) {

@@ -105,37 +105,49 @@ export const mockMerchants = [
 // 创建产品数据，确保商家引用正确
 const createMockProducts = () => [
   // merchant 1 - Sweet Candy Shop
-  { id: 101, title: "Gummy Bears", price: 4.99, description: "Classic gummy bears in assorted flavors.", merchant: mockMerchants[0] },
-  { id: 102, title: "Chocolate Bars", price: 5.99, description: "Rich chocolate bars with nuts.", merchant: mockMerchants[0] },
-  { id: 103, title: "Lollipops", price: 3.99, description: "Colorful lollipops for kids.", merchant: mockMerchants[0] },
+  { id: 101, title: "Gummy Bears", price: 4.99, description: "Classic gummy bears in assorted flavors.", merchant: mockMerchants[0], category: "糖果" },
+  { id: 102, title: "Chocolate Bars", price: 5.99, description: "Rich chocolate bars with nuts.", merchant: mockMerchants[0], category: "巧克力" },
+  { id: 103, title: "Lollipops", price: 3.99, description: "Colorful lollipops for kids.", merchant: mockMerchants[0], category: "糖果" },
   
   // merchant 2 - Choco Factory
-  { id: 201, title: "Dark Chocolate", price: 6.99, description: "Premium dark chocolate bar.", merchant: mockMerchants[1] },
-  { id: 202, title: "Milk Chocolate", price: 7.49, description: "Creamy milk chocolate bar.", merchant: mockMerchants[1] },
-  { id: 203, title: "White Chocolate", price: 6.49, description: "Smooth white chocolate bar.", merchant: mockMerchants[1] },
+  { id: 201, title: "Dark Chocolate", price: 6.99, description: "Premium dark chocolate bar.", merchant: mockMerchants[1], category: "巧克力" },
+  { id: 202, title: "Milk Chocolate", price: 7.49, description: "Creamy milk chocolate bar.", merchant: mockMerchants[1], category: "巧克力" },
+  { id: 203, title: "White Chocolate", price: 6.49, description: "Smooth white chocolate bar.", merchant: mockMerchants[1], category: "巧克力" },
   
   // merchant 3 - Fruit Snacks
-  { id: 301, title: "Dried Mango", price: 5.99, description: "Natural dried mango slices.", merchant: mockMerchants[2] },
-  { id: 302, title: "Dried Strawberry", price: 5.49, description: "Sweet dried strawberry pieces.", merchant: mockMerchants[2] },
-  { id: 303, title: "Fruit Leather", price: 4.99, description: "Healthy fruit leather strips.", merchant: mockMerchants[2] },
+  { id: 301, title: "Dried Mango", price: 5.99, description: "Natural dried mango slices.", merchant: mockMerchants[2], category: "果干" },
+  { id: 302, title: "Dried Strawberry", price: 5.49, description: "Sweet dried strawberry pieces.", merchant: mockMerchants[2], category: "果干" },
+  { id: 303, title: "Fruit Leather", price: 4.99, description: "Healthy fruit leather strips.", merchant: mockMerchants[2], category: "果干" },
   
   // merchant 4 - Beauty World Bakery
-  { id: 401, title: "Fresh Bread", price: 3.99, description: "Artisan fresh bread loaf.", merchant: mockMerchants[3] },
-  { id: 402, title: "Croissants", price: 2.99, description: "Buttery French croissants.", merchant: mockMerchants[3] },
-  { id: 403, title: "Muffins", price: 3.49, description: "Blueberry muffins.", merchant: mockMerchants[3] },
+  { id: 401, title: "Fresh Bread", price: 3.99, description: "Artisan fresh bread loaf.", merchant: mockMerchants[3], category: "面包" },
+  { id: 402, title: "Croissants", price: 2.99, description: "Buttery French croissants.", merchant: mockMerchants[3], category: "面包" },
+  { id: 403, title: "Muffins", price: 3.49, description: "Blueberry muffins.", merchant: mockMerchants[3], category: "面包" },
   
   // merchant 5 - Marina Bay Delights
-  { id: 501, title: "Premium Nuts", price: 8.99, description: "Mixed premium nuts.", merchant: mockMerchants[4] },
-  { id: 502, title: "Gourmet Cookies", price: 7.99, description: "Artisan gourmet cookies.", merchant: mockMerchants[4] },
-  { id: 503, title: "Tea Biscuits", price: 6.99, description: "Elegant tea biscuits.", merchant: mockMerchants[4] },
+  { id: 501, title: "Premium Nuts", price: 8.99, description: "Mixed premium nuts.", merchant: mockMerchants[4], category: "坚果" },
+  { id: 502, title: "Gourmet Cookies", price: 7.99, description: "Artisan gourmet cookies.", merchant: mockMerchants[4], category: "饼干" },
+  { id: 503, title: "Tea Biscuits", price: 6.99, description: "Elegant tea biscuits.", merchant: mockMerchants[4], category: "饼干" },
   
   // merchant 6 - Jurong East Treats
-  { id: 601, title: "Traditional Cookies", price: 4.99, description: "Homestyle traditional cookies.", merchant: mockMerchants[5] },
-  { id: 602, title: "Local Snacks", price: 3.99, description: "Authentic local snack mix.", merchant: mockMerchants[5] },
-  { id: 603, title: "Rice Crackers", price: 3.49, description: "Crispy rice crackers.", merchant: mockMerchants[5] },
+  { id: 601, title: "Traditional Cookies", price: 4.99, description: "Homestyle traditional cookies.", merchant: mockMerchants[5], category: "饼干" },
+  { id: 602, title: "Local Snacks", price: 3.99, description: "Authentic local snack mix.", merchant: mockMerchants[5], category: "零食" },
+  { id: 603, title: "Rice Crackers", price: 3.49, description: "Crispy rice crackers.", merchant: mockMerchants[5], category: "零食" },
 ]
 
 export const mockProducts = createMockProducts()
+
+// 商品分类数据
+export const productCategories = [
+  { id: 'all', name: '全部', icon: '🍽️' },
+  { id: 'candy', name: '糖果', icon: '🍬' },
+  { id: 'chocolate', name: '巧克力', icon: '🍫' },
+  { id: 'fruit', name: '果干', icon: '🍎' },
+  { id: 'bread', name: '面包', icon: '🍞' },
+  { id: 'nuts', name: '坚果', icon: '🥜' },
+  { id: 'cookies', name: '饼干', icon: '🍪' },
+  { id: 'snacks', name: '零食', icon: '🍿' }
+]
 
 // Mock评论数据
 export const mockReviews = [

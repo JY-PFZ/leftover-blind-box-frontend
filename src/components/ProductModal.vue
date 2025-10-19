@@ -30,6 +30,13 @@
         <section class="info">
           <h2 class="title">{{ product?.title }}</h2>
 
+          <!-- 分类标签 -->
+          <div v-if="product?.category" class="category-tag mb-3">
+            <span class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white text-sm px-3 py-1 rounded-full shadow-sm font-medium">
+              {{ product.category }}
+            </span>
+          </div>
+
           <div class="subrow">
             <div class="price">
               <span class="now">${{ priceNow }}</span>
