@@ -61,6 +61,7 @@ export const useUserStore = defineStore('user', () => {
       // 3. 发送登录请求
       const loginResponse = await api.post('/auth/login', {
         email: usernameInput,  // 后端期望email字段
+        username: usernameInput,  // 后端也需要username字段
         password: encryptedPassword
       });
       
@@ -143,7 +144,7 @@ export const useUserStore = defineStore('user', () => {
       
       console.log('📤 发送注册数据:', { ...registerData, password: '[ENCRYPTED]' });
       
-      const registerResponse = await api.post('/auth/register', registerData);
+      const registerResponse = await api.post('/user/register', registerData);
       
       console.log('📡 注册响应:', registerResponse.data);
       
@@ -205,7 +206,7 @@ export const useUserStore = defineStore('user', () => {
       
       console.log('📤 测试注册数据:', { ...testData, password: '[ENCRYPTED]' });
       
-      const response = await api.post('/auth/register', testData);
+      const response = await api.post('/user/register', testData);
       console.log('📡 测试注册响应:', response.data);
       
       return { success: true, data: response.data };
