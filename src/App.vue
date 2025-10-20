@@ -35,11 +35,17 @@
             <span class="username">👤 {{ user.username }}</span>
           </div>
           <button @click="handleLogout" class="logout-btn">Logout</button>
-        </template>
+        </template>
+        
+        <!-- API测试按钮 -->
+        <button @click="testApi" class="api-test-btn">
+          🧪 Test API
+        </button>
+        
         <RouterLink v-if="user.role !== 'merchant'" to="/cart" class="cart-btn">
-          🛒 Cart
-          <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
-        </RouterLink>
+          🛒 Cart
+          <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+        </RouterLink>
       </div>
     </nav>
 
@@ -82,6 +88,17 @@ const handleMerchantLogin = () => {
   router.push('/merchant/dashboard');
 };
 
+// API测试功能
+const testApi = async () => {
+  console.log('🧪 开始测试API连接...');
+  const result = await user.testApiConnection();
+  if (result.success) {
+    alert('✅ API连接成功！后端服务正常');
+  } else {
+    alert('❌ API连接失败：' + result.error);
+  }
+};
+
 onMounted(async () => {
   window.addEventListener('open-login', handleOpenLogin);
   // 4. 在组件挂载时开始监听全局事件
@@ -113,6 +130,7 @@ body { font-family: 'Arial', sans-serif; background: #fdf2e9; }
 .username { color: #155724; font-weight: 500; font-size: 14px; }
 .merchant-badge { background: #007bff; color: white; padding: 2px 6px; font-size: 12px; border-radius: 4px; margin-right: 8px; }
 .logout-btn { background: #dc3545; color: white; }
+.api-test-btn { background: #6f42c1; color: white; }
 .cart-btn { background: #f39c12; color: white; position: relative; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; white-space: nowrap; }
 .cart-badge { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; }
 </style>
