@@ -75,9 +75,11 @@
 
 <script setup>
 import { ref } from 'vue';
-import { getUserLocation } from '@/utils/geoUtils'; // Make sure this path is correct
+import { getUserLocation } from '@/utils/geoUtils';
+import { useUserStore } from '@/stores/user';
 
 const emit = defineEmits(['close']);
+const userStore = useUserStore();
 
 // Common fields
 const email = ref('');

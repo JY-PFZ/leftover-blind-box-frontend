@@ -4,7 +4,7 @@
     <div class="modal">
       <h2>Login</h2>
       <form @submit.prevent="onSubmit" class="form">
-        <input v-model.trim="username" type="text" placeholder="Email / Username" required />
+        <input v-model.trim="username" type="email" placeholder="Email Address" required />
         <input v-model.trim="password" type="password" placeholder="Password" minlength="6" required />
         <button class="primary" :disabled="loading">
           {{ loading ? 'Logging in…' : 'Login' }}

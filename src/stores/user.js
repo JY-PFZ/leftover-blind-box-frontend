@@ -60,7 +60,7 @@ export const useUserStore = defineStore('user', () => {
       
       // 3. 发送登录请求
       const loginResponse = await api.post('/auth/login', {
-        username: usernameInput,
+        email: usernameInput,  // 后端期望email字段
         password: encryptedPassword
       });
       
@@ -134,9 +134,9 @@ export const useUserStore = defineStore('user', () => {
       
       // 3. 发送注册请求
       const registerResponse = await api.post('/auth/register', {
-        username: usernameInput,
+        email: usernameInput,  // 后端期望email字段
         password: encryptedPassword,
-        email: email
+        username: usernameInput  // 同时发送username字段
       });
       
       console.log('📡 注册响应:', registerResponse.data);
