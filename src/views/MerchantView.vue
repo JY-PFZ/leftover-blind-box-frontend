@@ -128,17 +128,22 @@
               </div>
     </div>
 
-            <!-- 商品信息 -->
+            <!-- 商品信息 - 淘宝风格优化 -->
             <div class="product-info">
+              <!-- 商品标题 - 统一字体高度 -->
               <h3 class="product-title">{{ product.title }}</h3>
-              <div class="product-price-row">
-                <div>
-                  <div class="product-price">¥{{ product.price.toFixed(2) }}</div>
-                  <div class="product-sales">销量 {{ Math.floor(Math.random() * 1000) + 100 }}</div>
-                </div>
+              
+              <!-- 价格区域 - 突出显示 -->
+              <div class="product-price-section">
+                <div class="product-price">¥{{ product.price.toFixed(2) }}</div>
+                <div class="product-sales">销量 {{ Math.floor(Math.random() * 1000) + 100 }}</div>
+              </div>
+              
+              <!-- 操作按钮 -->
+              <div class="product-actions">
                 <button 
                   @click="openProduct(product)"
-                  class="view-details"
+                  class="view-details-btn"
                 >
                   查看详情
                 </button>
@@ -830,6 +835,9 @@ watchEffect(() => {
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .add-to-cart-overlay {
@@ -864,45 +872,61 @@ watchEffect(() => {
 }
 
 .product-info {
-  padding: 12px;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .product-title {
   font-size: 14px;
+  font-weight: 500;
   color: #111827;
-  line-height: 1.4;
-  margin-bottom: 8px;
+  line-height: 1.5;
+  margin-bottom: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  letter-spacing: 0.025em;
+  min-height: 42px; /* 确保中英文混排时高度一致 */
 }
 
-.product-price-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.product-price-section {
+  margin-bottom: 12px;
 }
 
 .product-price {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 700;
   color: #ff6600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  letter-spacing: -0.025em;
 }
 
 .product-sales {
   font-size: 12px;
   color: #6b7280;
+  line-height: 1.4;
+  letter-spacing: 0.025em;
 }
 
-.view-details {
+.product-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.view-details-btn {
   font-size: 12px;
   color: #6b7280;
-  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 4px 0;
   cursor: pointer;
+  transition: color 0.2s;
+  letter-spacing: 0.025em;
 }
 
-.view-details:hover {
+.view-details-btn:hover {
   color: #ff6600;
 }
 
