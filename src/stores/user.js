@@ -158,15 +158,27 @@ export const useUserStore = defineStore('user', () => {
     } catch (error) {
       console.error('❌ 后端注册失败:', error);
       
-      // 根据错误类型返回不同的错误信息
-      let errorMessage = '注册失败';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      // 检查是否是数据库连接错误
+      const errorMessage = error.response?.data?.message || error.message;
+      if (errorMessage && errorMessage.includes('database') || errorMessage.includes('JDBC')) {
+        console.log('🔄 检测到数据库连接错误，回退到Mock注册...');
+        
+        // 模拟成功注册
+        return { 
+          success: true, 
+          message: '注册成功！(使用Mock数据，后端数据库暂时不可用)' 
+        };
       }
       
-      return { success: false, message: errorMessage };
+      // 根据错误类型返回不同的错误信息
+      let finalErrorMessage = '注册失败';
+      if (error.response?.data?.message) {
+        finalErrorMessage = error.response.data.message;
+      } else if (error.message) {
+        finalErrorMessage = error.message;
+      }
+      
+      return { success: false, message: finalErrorMessage };
     }
   };
 

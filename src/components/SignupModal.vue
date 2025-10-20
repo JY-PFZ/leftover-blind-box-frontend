@@ -139,13 +139,19 @@ const onSubmit = async () => {
     const result = await userStore.register(email.value, password.value, email.value, additionalData);
     
     if (result.success) {
-      successMsg.value = '✅ Registration successful! You can now log in.';
+      successMsg.value = result.message || '✅ Registration successful! You can now log in.';
       
       setTimeout(() => {
         emit('close');
       }, 2000);
     } else {
-      errorMsg.value = result.message || 'Registration failed. Please try again later.';
+      // 检查是否是数据库错误
+      const errorText = result.message || 'Registration failed. Please try again later.';
+      if (errorText.includes('database') || errorText.includes('JDBC')) {
+        errorMsg.value = '⚠️ 后端数据库暂时不可用，请稍后再试或联系管理员';
+      } else {
+        errorMsg.value = errorText;
+      }
     }
   } catch (error) {
     console.error('Registration failed:', error);
