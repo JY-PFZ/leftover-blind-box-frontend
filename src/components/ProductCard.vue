@@ -10,11 +10,11 @@
       />
       <div v-else class="thumb-fallback w-full h-120 bg-gradient-to-r from-cream-200 to-pink-200"></div>
       
-      <!-- 产品标签（分类标签） -->
-      <div class="absolute top-3 left-3 flex flex-wrap gap-1">
+      <!-- 产品标签（分类标签） - 淘宝风格优化 -->
+      <div class="absolute top-8 left-8 flex flex-wrap gap-1">
         <span 
           v-if="product.category" 
-          class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white text-xs px-2 py-1 rounded-full shadow-sm font-medium"
+          class="category-tag"
         >
           {{ product.category }}
         </span>
@@ -157,19 +157,51 @@ function mockLogin() {
   transition: transform 0.5s ease;
 }
 
-/* 信息区：排版与间距优化 */
+/* 分类标签 - 淘宝风格 */
+.category-tag {
+  background: #ff6600;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 信息区：排版与间距优化 - 淘宝风格 */
 .content {
-  padding: 12px;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 .title {
-  font-size: 16px;
-  margin: 4px 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.025em;
+  min-height: 42px; /* 确保中英文混排时高度一致 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .price-row {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+.price-row span:first-child {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #ff6600 !important;
+  letter-spacing: -0.025em;
 }
 .description {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+  letter-spacing: 0.025em;
 }
 
 /* 按钮样式：明确交互反馈 */
