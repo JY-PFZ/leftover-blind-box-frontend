@@ -214,8 +214,13 @@
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
+import { useOrderStore } from '@/stores/order'
+import { useRouter } from 'vue-router'
+
 const cart = useCartStore()
 const user = useUserStore()
+const orderStore = useOrderStore()
+const router = useRouter()
 
 // 更新商品数量
 function updateQuantity(id, newQty) {
@@ -305,27 +310,29 @@ async function processPayment() {
     // 模拟支付处理
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    // 创建订单数据
-    const orderData = {
-      id: Date.now(),
-      items: cart.items,
-      total: cart.total,
-      paymentMethod: selectedPayment.value,
-      paymentName: getPaymentName(selectedPayment.value),
-      status: 'completed',
-      createdAt: new Date().toISOString()
-    }
+    // 创建订单
+    const order = orderStore.createOrder(cart.items, {
+      username: user.username,
+      email: user.username // 使用username作为email
+    })
     
-    // 这里可以调用后端API保存订单
-    // await api.post('/orders', orderData)
+    // 更新订单支付信息
+    order.paymentMethod = selectedPayment.value
+    order.paymentName = getPaymentName(selectedPayment.value)
+    order.status = 'confirmed' // 支付成功后确认订单
     
-    alert(`支付成功！\n订单号: ${orderData.id}\n支付方式: ${orderData.paymentName}\n金额: $${orderData.total.toFixed(2)}`)
+    console.log('📦 订单创建成功:', order)
+    
+    alert(`支付成功！\n订单号: ${order.id}\n支付方式: ${order.paymentName}\n金额: $${order.totalAmount.toFixed(2)}`)
     
     // 清空购物车
     cart.clear()
     
     // 关闭模态框
     closePaymentModal()
+    
+    // 跳转到订单历史页面
+    router.push('/order-history')
     
   } catch (error) {
     console.error('支付处理失败:', error)

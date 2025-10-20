@@ -111,74 +111,19 @@ export const useUserStore = defineStore('user', () => {
   
   const register = async (usernameInput, password, email, additionalData = {}) => {
     try {
-      console.log('📝 开始后端注册流程...', { username: usernameInput, email });
+      console.log('📝 开始Mock注册流程...', { username: usernameInput, email });
       
-      // 1. 获取RSA公钥
-      const keyResponse = await api.get('/auth/key');
-      console.log('🔑 获取公钥成功:', keyResponse.data);
+      // 暂时使用Mock注册，等待后端数据库修复
+      console.log('🔄 使用Mock注册模式...');
       
-      const publicKey = keyResponse.data?.data || keyResponse.data;
-      if (!publicKey) {
-        throw new Error('无法获取RSA公钥');
-      }
-      
-      // 2. 加密密码
-      const encrypt = new JSEncrypt();
-      encrypt.setPublicKey(publicKey);
-      const encryptedPassword = encrypt.encrypt(password);
-      
-      if (!encryptedPassword) {
-        throw new Error('密码加密失败');
-      }
-      
-      console.log('🔒 密码加密成功');
-      
-      // 3. 发送注册请求
-      const registerData = {
-        email: usernameInput,
-        password: encryptedPassword,
-        username: usernameInput,
-        role: additionalData.role || 'CUSTOMER',
-        ...additionalData  // 包含其他可能的字段
+      // 模拟成功注册
+      return { 
+        success: true, 
+        message: '注册成功！(Mock模式，后端数据库正在修复中)' 
       };
-      
-      console.log('📤 发送注册数据:', { ...registerData, password: '[ENCRYPTED]' });
-      
-      const registerResponse = await api.post('/user/register', registerData);
-      
-      console.log('📡 注册响应:', registerResponse.data);
-      
-      // 检查响应格式 - 后端返回 {code: 1, message: "SUCCESS", data: {...}}
-      if (registerResponse.data?.code === 1 || registerResponse.data?.success) {
-        console.log('✅ 后端注册成功');
-        return { success: true, message: '注册成功！请登录' };
-      } else {
-        throw new Error(registerResponse.data?.message || '注册失败');
-      }
     } catch (error) {
-      console.error('❌ 后端注册失败:', error);
-      
-      // 检查是否是数据库连接错误
-      const errorMessage = error.response?.data?.message || error.message;
-      if (errorMessage && errorMessage.includes('database') || errorMessage.includes('JDBC')) {
-        console.log('🔄 检测到数据库连接错误，回退到Mock注册...');
-        
-        // 模拟成功注册
-        return { 
-          success: true, 
-          message: '注册成功！(使用Mock数据，后端数据库暂时不可用)' 
-        };
-      }
-      
-      // 根据错误类型返回不同的错误信息
-      let finalErrorMessage = '注册失败';
-      if (error.response?.data?.message) {
-        finalErrorMessage = error.response.data.message;
-      } else if (error.message) {
-        finalErrorMessage = error.message;
-      }
-      
-      return { success: false, message: finalErrorMessage };
+      console.error('❌ Mock注册失败:', error);
+      return { success: false, message: '注册失败，请稍后再试' };
     }
   };
 

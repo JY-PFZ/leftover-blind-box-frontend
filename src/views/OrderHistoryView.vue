@@ -66,12 +66,12 @@
                     <span class="text-white text-xl font-bold">#</span>
                   </div>
                   <div>
-                    <h3 class="text-xl font-bold text-gray-800">订单 #{{ order.orderNo }}</h3>
+                    <h3 class="text-xl font-bold text-gray-800">订单 #{{ order.id }}</h3>
                     <p class="text-gray-500">{{ formatDate(order.createdAt) }}</p>
                   </div>
                 </div>
-                <div :class="['px-4 py-2 rounded-full font-bold text-sm', getStatusClass(order.status)]">
-                  {{ order.status }}
+                <div :class="['px-4 py-2 rounded-full font-bold text-sm', getStatusColor(order.status)]">
+                  {{ getStatusText(order.status) }}
                 </div>
               </div>
               
@@ -79,31 +79,87 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div class="space-y-3">
                   <div class="flex items-center gap-3">
-                    <span class="text-2xl">🏪</span>
+                    <span class="text-2xl">👤</span>
                     <div>
-                      <p class="text-sm text-gray-500">商家</p>
-                      <p class="font-semibold text-gray-800">{{ order.merchantName }}</p>
+                      <p class="text-sm text-gray-500">用户</p>
+                      <p class="font-semibold text-gray-800">{{ order.userId }}</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-3">
-                    <span class="text-2xl">🎁</span>
+                    <span class="text-2xl">📧</span>
                     <div>
-                      <p class="text-sm text-gray-500">商品</p>
-                      <p class="font-semibold text-gray-800">{{ order.bagTitle }}</p>
+                      <p class="text-sm text-gray-500">邮箱</p>
+                      <p class="font-semibold text-gray-800">{{ order.userEmail }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">💳</span>
+                    <div>
+                      <p class="text-sm text-gray-500">支付方式</p>
+                      <p class="font-semibold text-gray-800">{{ order.paymentMethod }}</p>
                     </div>
                   </div>
                 </div>
                 
-                <div class="flex items-center justify-between md:justify-end">
-                  <div class="text-right">
-                    <p class="text-sm text-gray-500">总价</p>
-                    <p class="text-3xl font-bold text-green-600">${{ order.totalPrice.toFixed(2) }}</p>
+                <div class="space-y-3">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                      <p class="text-sm text-gray-500">商品数量</p>
+                      <p class="font-semibold text-gray-800">{{ order.items.length }} 件商品</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">💰</span>
+                    <div>
+                      <p class="text-sm text-gray-500">总金额</p>
+                      <p class="font-semibold text-gray-800">${{ order.totalAmount.toFixed(2) }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">📅</span>
+                    <div>
+                      <p class="text-sm text-gray-500">更新时间</p>
+                      <p class="font-semibold text-gray-800">{{ formatDate(order.updatedAt) }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 商品列表 -->
+              <div class="mt-4">
+                <h4 class="text-lg font-semibold text-gray-800 mb-3">商品详情</h4>
+                <div class="space-y-2">
+                  <div v-for="item in order.items" :key="item.productId" class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                        <span class="text-white text-sm">🍭</span>
+                      </div>
+                      <div>
+                        <p class="font-semibold text-gray-800">{{ item.productName }}</p>
+                        <p class="text-sm text-gray-500">数量: {{ item.quantity }}</p>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <p class="font-semibold text-gray-800">${{ item.totalPrice.toFixed(2) }}</p>
+                      <p class="text-sm text-gray-500">单价: ${{ item.productPrice.toFixed(2) }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
               
               <!-- 操作按钮 -->
-              <div class="flex justify-end">
+              <div class="flex justify-end gap-3">
+                <button 
+                  v-if="order.status === 'pending' || order.status === 'confirmed'"
+                  @click="cancelOrder(order.id)"
+                  class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-2xl font-bold hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="text-lg">❌</span>
+                    取消订单
+                  </span>
+                </button>
                 <button class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
                   <span class="flex items-center gap-2">
                     <span class="text-lg">👁️</span>
@@ -120,56 +176,94 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { fetchOrders } from '@/services/orderService';
+import { ref, computed, onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { useOrderStore } from '@/stores/order'
 
-// --- CONFIG ---
-// Set to `true` to use mock data, ideal for UI development without a real backend.
-const USE_MOCK_DATA = ref(true);
+const user = useUserStore()
+const orderStore = useOrderStore()
 
-// --- STATE ---
-const orders = ref([]);
-const isLoading = ref(true);
-const error = ref(null);
+// 状态
+const isLoading = ref(false)
+const error = ref(null)
 
-// --- MOCK DATA ---
-const mockOrders = [
-  { id: 1, orderNo: 'ORD-001', status: 'COMPLETED', merchantName: 'The Corner Bakery', bagTitle: 'Morning Pastry Bag', createdAt: '2025-10-02T10:30:00Z', totalPrice: 15.99 },
-  { id: 2, orderNo: 'ORD-002', status: 'PENDING', merchantName: 'Sushi World', bagTitle: 'Daily Sushi Special', createdAt: '2025-10-03T18:00:00Z', totalPrice: 25.00 },
-  { id: 3, orderNo: 'ORD-003', status: 'CANCELLED', merchantName: 'Green Grocers', bagTitle: 'Fresh Fruit Box', createdAt: '2025-09-28T14:15:00Z', totalPrice: 18.50 },
-];
+// 计算属性
+const orders = computed(() => {
+  if (!user.isLoggedIn) return []
+  return orderStore.getUserOrders(user.username)
+})
 
-// --- METHODS ---
+const orderStats = computed(() => {
+  if (!user.isLoggedIn) return null
+  return orderStore.getOrderStats(user.username)
+})
+
+// 加载订单
 const loadOrders = async () => {
-  isLoading.value = true;
-  error.value = null;
-
-  if (USE_MOCK_DATA.value) {
-    orders.value = mockOrders;
-    isLoading.value = false;
-    return;
-  }
-
+  isLoading.value = true
+  error.value = null
+  
   try {
-    const data = await fetchOrders({ pageNum: 1, pageSize: 20 }); // Fetch first 20 orders
-    // The API response nests the list in a `records` property
-    orders.value = data.records || [];
+    // 初始化订单store
+    orderStore.initialize()
+    console.log('📦 订单历史加载完成:', orders.value.length, '个订单')
   } catch (err) {
-    error.value = err;
-    console.error(err);
+    console.error('加载订单失败:', err)
+    error.value = '加载订单失败'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
+// 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString('en-US', {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 获取状态颜色
+const getStatusColor = (status) => {
+  const colors = {
+    pending: 'text-yellow-600 bg-yellow-100',
+    confirmed: 'text-blue-600 bg-blue-100',
+    shipped: 'text-purple-600 bg-purple-100',
+    delivered: 'text-green-600 bg-green-100',
+    cancelled: 'text-red-600 bg-red-100'
+  }
+  return colors[status] || 'text-gray-600 bg-gray-100'
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+  const texts = {
+    pending: '待确认',
+    confirmed: '已确认',
+    shipped: '已发货',
+    delivered: '已送达',
+    cancelled: '已取消'
+  }
+  return texts[status] || status
+}
+
+// 取消订单
+const cancelOrder = (orderId) => {
+  if (confirm('确定要取消这个订单吗？')) {
+    orderStore.cancelOrder(orderId)
+  }
+}
+
+// 组件挂载时加载订单
+onMounted(() => {
+  loadOrders()
+})
+</script>
 
 const getStatusClass = (status) => {
   if (!status) return 'pending';
