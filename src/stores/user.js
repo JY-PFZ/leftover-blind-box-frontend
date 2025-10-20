@@ -108,7 +108,7 @@ export const useUserStore = defineStore('user', () => {
     }
   };
   
-  const register = async (usernameInput, password, email) => {
+  const register = async (usernameInput, password, email, additionalData = {}) => {
     try {
       console.log('📝 开始后端注册流程...', { username: usernameInput, email });
       
@@ -133,11 +133,17 @@ export const useUserStore = defineStore('user', () => {
       console.log('🔒 密码加密成功');
       
       // 3. 发送注册请求
-      const registerResponse = await api.post('/auth/register', {
-        email: usernameInput,  // 后端期望email字段
+      const registerData = {
+        email: usernameInput,
         password: encryptedPassword,
-        username: usernameInput  // 同时发送username字段
-      });
+        username: usernameInput,
+        role: additionalData.role || 'CUSTOMER',
+        ...additionalData  // 包含其他可能的字段
+      };
+      
+      console.log('📤 发送注册数据:', { ...registerData, password: '[ENCRYPTED]' });
+      
+      const registerResponse = await api.post('/auth/register', registerData);
       
       console.log('📡 注册响应:', registerResponse.data);
       
@@ -173,6 +179,39 @@ export const useUserStore = defineStore('user', () => {
     } catch (error) {
       console.error('❌ API连接失败:', error);
       return { success: false, error: error.message };
+    }
+  };
+
+  // 测试注册API
+  const testRegisterApi = async () => {
+    try {
+      console.log('🧪 测试注册API...');
+      
+      // 获取公钥
+      const keyResponse = await api.get('/auth/key');
+      const publicKey = keyResponse.data?.data || keyResponse.data;
+      
+      // 加密测试密码
+      const encrypt = new JSEncrypt();
+      encrypt.setPublicKey(publicKey);
+      const encryptedPassword = encrypt.encrypt('test123456');
+      
+      // 测试最简单的注册请求
+      const testData = {
+        email: 'test@example.com',
+        password: encryptedPassword,
+        username: 'testuser'
+      };
+      
+      console.log('📤 测试注册数据:', { ...testData, password: '[ENCRYPTED]' });
+      
+      const response = await api.post('/auth/register', testData);
+      console.log('📡 测试注册响应:', response.data);
+      
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('❌ 测试注册API失败:', error);
+      return { success: false, error: error.message, details: error.response?.data };
     }
   };
 
@@ -217,6 +256,7 @@ export const useUserStore = defineStore('user', () => {
     logout,
     initialize,
     testApiConnection,
+    testRegisterApi,
   };
 });
 

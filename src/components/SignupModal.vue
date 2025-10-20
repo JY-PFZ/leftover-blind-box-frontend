@@ -127,7 +127,16 @@ const onSubmit = async () => {
 
   try {
     // 使用用户store的register方法
-    const result = await userStore.register(email.value, password.value, email.value);
+    const additionalData = {
+      role: role.value,
+      name: role.value === 'MERCHANT' ? storeName.value : email.value,
+      phone: role.value === 'MERCHANT' ? phone.value : undefined,
+      address: role.value === 'MERCHANT' ? address.value : undefined,
+      latitude: role.value === 'MERCHANT' && location.value ? location.value.latitude : undefined,
+      longitude: role.value === 'MERCHANT' && location.value ? location.value.longitude : undefined
+    };
+    
+    const result = await userStore.register(email.value, password.value, email.value, additionalData);
     
     if (result.success) {
       successMsg.value = '✅ Registration successful! You can now log in.';

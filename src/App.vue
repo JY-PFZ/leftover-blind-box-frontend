@@ -42,6 +42,11 @@
           🧪 Test API
         </button>
         
+        <!-- 注册API测试按钮 -->
+        <button @click="testRegisterApi" class="register-test-btn">
+          📝 Test Register
+        </button>
+        
         <RouterLink v-if="user.role !== 'merchant'" to="/cart" class="cart-btn">
           🛒 Cart
           <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
@@ -99,6 +104,17 @@ const testApi = async () => {
   }
 };
 
+// 注册API测试功能
+const testRegisterApi = async () => {
+  console.log('🧪 开始测试注册API...');
+  const result = await user.testRegisterApi();
+  if (result.success) {
+    alert('✅ 注册API测试成功！');
+  } else {
+    alert('❌ 注册API测试失败：' + result.error + '\n详情：' + JSON.stringify(result.details));
+  }
+};
+
 onMounted(async () => {
   window.addEventListener('open-login', handleOpenLogin);
   // 4. 在组件挂载时开始监听全局事件
@@ -131,6 +147,7 @@ body { font-family: 'Arial', sans-serif; background: #fdf2e9; }
 .merchant-badge { background: #007bff; color: white; padding: 2px 6px; font-size: 12px; border-radius: 4px; margin-right: 8px; }
 .logout-btn { background: #dc3545; color: white; }
 .api-test-btn { background: #6f42c1; color: white; }
+.register-test-btn { background: #17a2b8; color: white; }
 .cart-btn { background: #f39c12; color: white; position: relative; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; white-space: nowrap; }
 .cart-badge { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; }
 </style>
