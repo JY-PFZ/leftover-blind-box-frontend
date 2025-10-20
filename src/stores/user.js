@@ -201,7 +201,8 @@ export const useUserStore = defineStore('user', () => {
       const testData = {
         email: 'test@example.com',
         password: encryptedPassword,
-        username: 'testuser'
+        username: 'testuser',
+        role: 'CUSTOMER'  // 添加role字段
       };
       
       console.log('📤 测试注册数据:', { ...testData, password: '[ENCRYPTED]' });
