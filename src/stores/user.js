@@ -1,91 +1,101 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getUserLocation } from '@/utils/geoUtils'; 
-
-const mockUserDatabase = {
-  'customer@test.com': {
-    username: 'customer@test.com',
-    role: 'customer', 
-  },
-  'merchant@shop.com': {
-    username: 'merchant@shop.com',
-    role: 'merchant',
-  },
-};
+import { api } from '@/utils/api';
+// 不再需要 JSEncrypt
+// import { JSEncrypt } from 'jsencrypt';
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref('');
-  const username = ref('');
-  const role = ref('customer');
-  const userLocation = ref(null);
-  const isLoggedIn = ref(false);
-  const isInitialized = ref(false); // **步骤 1: 添加初始化标志**
+  const token = ref(localStorage.getItem('token') || '');
+  const username = ref(localStorage.getItem('username') || '');
+  const role = ref(localStorage.getItem('role') || 'customer');
+  const isLoggedIn = ref(!!token.value);
+  
+  let isInitialized = false;
+  let initializationPromise = null;
 
+  const fetchUserProfile = async () => {
+    if (!token.value) return;
+    try {
+      const response = await api.get('/user');
+      const userProfile = response.data.data;
+      if (userProfile && userProfile.username && userProfile.role) {
+        username.value = userProfile.username;
+        role.value = userProfile.role.toLowerCase();
+        localStorage.setItem('username', username.value);
+        localStorage.setItem('role', role.value);
+      } else {
+        console.warn('用户资料响应格式无效或接口不存在。');
+      }
+    } catch (error) {
+      console.error('获取用户资料失败，可能Token已过期:', error);
+      logout();
+      throw error;
+    }
+  };
+
+  const login = async (usernameInput, rawPassword) => {
+    try {
+      // **核心修复：直接发送原始密码**
+      const response = await api.post('/auth/login', {
+        username: usernameInput,
+        password: rawPassword 
+      });
+
+      const receivedToken = response.headers['x-new-token']; 
+      
+      if (!receivedToken || typeof receivedToken !== 'string') {
+        throw new Error('登录响应头中未找到有效的 Token。');
+      }
+      
+      token.value = receivedToken;
+      localStorage.setItem('token', receivedToken);
+      isLoggedIn.value = true;
+      
+      api.defaults.headers.common['Authorization'] = `Bearer ${receivedToken}`;
+
+      await fetchUserProfile();
+
+      return { success: true };
+    } catch (error) {
+      console.error('API 登录失败:', error);
+      const errorMessage = error.response?.data?.message || error.message || '登录时发生未知错误。';
+      logout();
+      return { success: false, message: errorMessage };
+    }
+  };
+  
   const logout = () => {
     token.value = '';
     username.value = '';
     role.value = 'customer';
     isLoggedIn.value = false;
-    userLocation.value = null;
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
+    delete api.defaults.headers.common['Authorization'];
   };
   
-  const login = async (usernameInput) => {
-    const mockUser = mockUserDatabase[usernameInput];
-    if (mockUser) {
-      token.value = 'mock-token-' + Date.now();
-      username.value = mockUser.username;
-      role.value = mockUser.role;
-      isLoggedIn.value = true;
-      localStorage.setItem('token', token.value);
-      localStorage.setItem('username', username.value);
-      localStorage.setItem('role', role.value);
-      return { success: true };
+  const initialize = () => {
+    if (!isInitialized) {
+      isInitialized = true;
+      initializationPromise = (async () => {
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+          token.value = savedToken;
+          api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+          isLoggedIn.value = true;
+          try {
+            await fetchUserProfile();
+          } catch (error) { /* Token无效，状态已清理 */ }
+        }
+      })();
     }
-    return { success: false, message: 'Mock user not found' };
-  };
-  
-  const fetchUserLocation = async () => {
-    try {
-        const location = await getUserLocation();
-        userLocation.value = location;
-    } catch (error) {
-        console.error('获取用户位置失败，使用默认值。', error);
-        userLocation.value = { latitude: 1.2966, longitude: 103.7764 };
-    }
-  };
-  
-  const initialize = async () => {
-    // 防止重复初始化
-    if (isInitialized.value) return;
-
-    const savedToken = localStorage.getItem('token');
-    const savedUsername = localStorage.getItem('username');
-    const savedRole = localStorage.getItem('role');
-
-    if (savedToken && savedUsername && savedRole) {
-      token.value = savedToken;
-      username.value = savedUsername;
-      role.value = savedRole;
-      isLoggedIn.value = true;
-      await fetchUserLocation();
-    }
-    // 无论是否恢复成功，都标记为已初始化
-    isInitialized.value = true; 
+    return initializationPromise;
   };
 
   return {
-    token,
-    username,
-    role,
-    isLoggedIn,
-    userLocation,
-    isInitialized, // **步骤 2: 导出标志**
-    login,
-    logout,
-    initialize,
+    token, username, role, isLoggedIn, isInitialized,
+    login, logout, initialize,
   };
 });
 

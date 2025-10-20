@@ -9,8 +9,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://54.169.196.90:10015',
-        changeOrigin: true
+        // 将目标地址修改为你本地的后端服务
+        target: 'http://localhost:10015', 
+        changeOrigin: true,
+        // (可选) 如果后端API路径不包含/api，可能需要路径重写
+        // rewrite: (path) => path.replace(/^\/api/, '') 
       }
     }
   },

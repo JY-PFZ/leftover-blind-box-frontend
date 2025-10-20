@@ -1,60 +1,76 @@
 <template>
-  <!-- 只点遮罩空白处才关闭 -->
-  <div class="overlay" @click.self="$emit('close')">
-    <div class="modal">
-      <h2>Login</h2>
-      <form @submit.prevent="onSubmit" class="form">
-        <input v-model.trim="username" type="text" placeholder="Email / Username" required />
-        <input v-model.trim="password" type="password" placeholder="Password" minlength="6" required />
-        <button class="primary" :disabled="loading">
-          {{ loading ? 'Logging in…' : 'Login' }}
-        </button>
-        <button class="ghost" type="button" @click="$emit('close')" :disabled="loading">Cancel</button>
-        <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
-        <p v-if="successMsg" class="success">{{ successMsg }}</p>
-      </form>
-    </div>
-  </div>
+  <!-- 只点遮罩空白处才关闭 -->
+  <div class="overlay" @click.self="$emit('close')">
+    <div class="modal">
+      <h2>Login</h2>
+
+      <form @submit.prevent="onSubmit" class="form">
+        <input
+          v-model.trim="username"
+          type="text"
+          placeholder="Email / Username"
+          required
+        />
+        <input
+          v-model.trim="password"
+          type="password"
+          placeholder="Password"
+          minlength="6"
+          required
+        />
+
+        <button class="primary" :disabled="loading">
+          {{ loading ? 'Logging in…' : 'Login' }}
+        </button>
+        <button class="ghost" type="button" @click="$emit('close')" :disabled="loading">
+          Cancel
+        </button>
+
+        <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+        <p v-if="successMsg" class="success">{{ successMsg }}</p>
+      </form>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useUserStore } from '@/stores/user'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 
-const emit = defineEmits(['close'])
-const userStore = useUserStore()
+const emit = defineEmits(['close']);
+const userStore = useUserStore();
+const router = useRouter();
 
-const username = ref('')
-const password = ref('')
-const loading = ref(false)
-const errorMsg = ref('')
-const successMsg = ref('')
+const username = ref('');
+const password = ref('');
+const loading = ref(false);
+const errorMsg = ref('');
+const successMsg = ref('');
 
 const onSubmit = async () => {
-  errorMsg.value = ''
-  successMsg.value = ''
-  loading.value = true
-  const res = await userStore.login(username.value, password.value) 
-  loading.value = false
+  errorMsg.value = '';
+  successMsg.value = '';
+  loading.value = true;
+  
+  // userStore.login 现在会处理原始密码
+  const res = await userStore.login(username.value, password.value); 
+  
+  loading.value = false;
 
-  if (res.success) {
-    successMsg.value = '✅ Login Successful! Redirecting...'
-    
-    setTimeout(() => {
-      emit('close')
-      
-      // 检查角色
-      if (userStore.role === 'merchant') {
-        // 如果是商家，发送全局事件
-        console.log('[LoginModal] 是商家，正在发送全局事件...');
-        window.dispatchEvent(new Event('merchant-login-success'));
-      }
-      
-    }, 1000)
-  } else {
-    errorMsg.value = res.message || 'Login failed'
-  }
-}
+  if (res.success) {
+    successMsg.value = '✅ Login Successful! Redirecting...';
+    
+    setTimeout(() => {
+      emit('close');
+      if (userStore.role === 'merchant') {
+        router.push('/merchant/dashboard');
+      }
+    }, 1000);
+  } else {
+    errorMsg.value = res.message || 'Login failed';
+  }
+};
 </script>
 
 <style scoped>
