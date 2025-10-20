@@ -123,38 +123,19 @@ const onSubmit = async () => {
   
   loading.value = true;
 
-  let registrationPayload = {
-    email: email.value,
-    password: password.value, // In a real app, do not log passwords
-    role: role.value,
-  };
-
-  if (role.value === 'MERCHANT') {
-    if (!storeName.value || !address.value || !location.value) {
-      errorMsg.value = 'Please fill all required merchant fields and provide location.';
-      loading.value = false;
-      return;
-    }
-    registrationPayload = {
-      ...registrationPayload,
-      name: storeName.value,
-      phone: phone.value,
-      address: address.value,
-      latitude: location.value.latitude,
-      longitude: location.value.longitude,
-    };
-  }
-
   try {
-    console.log('[Simulation] Submitting registration with payload:', registrationPayload);
-    // Simulate API call.
-    await new Promise(resolve => setTimeout(resolve, 1500)); 
+    // 使用用户store的register方法
+    const result = await userStore.register(email.value, password.value, email.value);
     
-    successMsg.value = '✅ Registration successful! You can now log in.';
-    
-    setTimeout(() => {
-      emit('close');
-    }, 2000);
+    if (result.success) {
+      successMsg.value = '✅ Registration successful! You can now log in.';
+      
+      setTimeout(() => {
+        emit('close');
+      }, 2000);
+    } else {
+      errorMsg.value = result.message || 'Registration failed. Please try again later.';
+    }
   } catch (error) {
     console.error('Registration failed:', error);
     errorMsg.value = 'Registration failed. Please try again later.';

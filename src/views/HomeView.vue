@@ -2,7 +2,15 @@
   <section class="wrap">
     <div class="title-row">
       <h1>{{ selectedCategory === 'all' ? 'All Products' : productCategories.find(c => c.id === selectedCategory)?.name + ' Products' }}</h1>
-      <div class="sub">Items: {{ products.length }}</div>
+      <div class="sub">
+        Items: {{ products.length }}
+        <button @click="toggleDataSource" class="data-source-btn" :class="{ 'api': useApiData }">
+          {{ useApiData ? 'API' : 'Mock' }}
+        </button>
+        <button @click="loadApiData" :disabled="isLoading" class="load-btn">
+          {{ isLoading ? 'Loading...' : 'Load API' }}
+        </button>
+      </div>
     </div>
 
     <!-- 分类选择器 -->
@@ -105,6 +113,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { mockProducts, mockMerchants, productCategories } from '@/mocks/data.js'
+import { productService } from '@/services/productService'
+import { merchantService } from '@/services/merchantService'
 import ProductCard from '@/components/ProductCard.vue'
 import ProductModal from '@/components/ProductModal.vue'
 import MerchantModal from '@/components/MerchantModal.vue'
@@ -125,6 +135,12 @@ const selectedMerchant = ref(null)
 const showMerchant = ref(false)
 const merchantProducts = ref([])
 
+// API数据状态
+const apiProducts = ref([])
+const apiMerchants = ref([])
+const isLoading = ref(false)
+const useApiData = ref(false) // 控制是否使用API数据
+
 // --- 排序逻辑 ---
 const SORT_MODES = ['default', 'distance-near', 'distance-far', 'price-asc', 'price-desc'];
 
@@ -134,11 +150,16 @@ const products = computed(() => {
     sortBy: sortBy.value,
     selectedCategory: selectedCategory.value,
     hasUserLocation: !!userLocation.value,
-    userLocation: userLocation.value
+    userLocation: userLocation.value,
+    useApiData: useApiData.value,
+    apiProductsCount: apiProducts.value.length
   })
   
+  // 选择数据源
+  const sourceProducts = useApiData.value ? apiProducts.value : mockProducts
+  
   // 先按分类过滤
-  let filteredProducts = mockProducts
+  let filteredProducts = sourceProducts
   if (selectedCategory.value !== 'all') {
     const categoryMap = {
       'candy': '糖果',
@@ -150,7 +171,7 @@ const products = computed(() => {
       'snacks': '零食'
     }
     const categoryName = categoryMap[selectedCategory.value]
-    filteredProducts = mockProducts.filter(p => p.category === categoryName)
+    filteredProducts = sourceProducts.filter(p => p.category === categoryName)
   }
   
   // 再按排序方式处理
@@ -162,7 +183,8 @@ const products = computed(() => {
     case 'distance-near':
     case 'distance-far':
       if (!userLocation.value) return filteredProducts;
-      const sortedMerchants = sortMerchantsByDistance(mockMerchants, userLocation.value);
+      const sourceMerchants = useApiData.value ? apiMerchants.value : mockMerchants;
+      const sortedMerchants = sortMerchantsByDistance(sourceMerchants, userLocation.value);
       if (sortBy.value === 'distance-far') sortedMerchants.reverse();
       
       const distanceSortedProducts = [];
@@ -211,6 +233,43 @@ const changeCategory = (categoryId) => {
   selectedCategory.value = categoryId
 }
 
+// 加载API数据
+const loadApiData = async () => {
+  isLoading.value = true
+  try {
+    // 并行加载商品和商家数据
+    const [productsResult, merchantsResult] = await Promise.all([
+      productService.getAllProducts(),
+      merchantService.getAllMerchants()
+    ])
+    
+    if (productsResult.success) {
+      apiProducts.value = productsResult.data
+      console.log('Loaded API products:', apiProducts.value.length)
+    }
+    
+    if (merchantsResult.success) {
+      apiMerchants.value = merchantsResult.data
+      console.log('Loaded API merchants:', apiMerchants.value.length)
+    }
+    
+    // 如果API数据加载成功，切换到API数据
+    if (productsResult.success || merchantsResult.success) {
+      useApiData.value = true
+    }
+  } catch (error) {
+    console.error('Failed to load API data:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 切换数据源
+const toggleDataSource = () => {
+  useApiData.value = !useApiData.value
+  console.log('Switched to:', useApiData.value ? 'API data' : 'Mock data')
+}
+
 // --- 事件处理 ---
 function openProduct(product) {
   if (!user.isLoggedIn) {
@@ -232,8 +291,41 @@ function openMerchant(merchant) {
 .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
 .title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px; }
 .title-row h1 { font-size: 22px; font-weight: 800; }
-.title-row .sub { color:#666; font-size:13px; }
+.title-row .sub { color:#666; font-size:13px; display: flex; align-items: center; gap: 8px; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
 .sort-controls { margin-bottom: 2rem; padding: 1.5rem; background-color: #f8f9fa; border-radius: 1rem; }
+
+.data-source-btn {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f5f5f5;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.data-source-btn.api {
+  background: #ff6600;
+  color: white;
+  border-color: #ff6600;
+}
+
+.load-btn {
+  padding: 4px 8px;
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  background: #007bff;
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.load-btn:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
 </style>
 
