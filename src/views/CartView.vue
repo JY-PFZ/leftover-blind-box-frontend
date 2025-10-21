@@ -13,8 +13,14 @@
 
     <!-- 购物车内容 -->
     <div class="container">
+      <!-- 加载状态 -->
+      <div v-if="cart.isLoading && cart.items.length === 0" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading your cart...</p>
+      </div>
+
       <!-- 空购物车状态 -->
-      <div v-if="cart.items.length === 0" class="empty-cart">
+      <div v-else-if="cart.items.length === 0" class="empty-cart">
         <div class="empty-icon">🛒</div>
         <h2>Your cart is empty</h2>
         <p>Add some delicious treats to get started!</p>
@@ -26,11 +32,7 @@
       <!-- 购物车商品列表 -->
       <div v-else class="cart-content">
         <div class="cart-items">
-          <div 
-            v-for="item in cart.items" 
-            :key="item.id" 
-            class="cart-item"
-          >
+          <div v-for="item in cart.items" :key="item.itemId || item.magicbagId" class="cart-item">
             <!-- 商品图片 -->
             <div class="item-image">
               <div class="image-placeholder">
@@ -40,37 +42,39 @@
 
             <!-- 商品信息 -->
             <div class="item-info">
-              <h3 class="item-title">{{ item.title }}</h3>
+              <h3 class="item-title">{{ item.bagName }}</h3>
               <p class="item-price">${{ item.price.toFixed(2) }}</p>
-              <p v-if="item.merchantId" class="item-merchant">
-                Merchant ID: {{ item.merchantId }}
+              <p v-if="!item.magicbagId" class="item-error-notice">
+                ⚠️ Item data is invalid.
               </p>
             </div>
 
             <!-- 数量控制 -->
             <div class="item-controls">
               <div class="quantity-control">
-                <button 
-                  class="qty-btn" 
-                  @click="updateQuantity(item.id, item.qty - 1)"
-                  :disabled="item.qty <= 1"
+                <button
+                  class="qty-btn"
+                  @click="updateQuantity(item.magicbagId, item.quantity - 1)"
+                  :disabled="cart.isLoading || !item.magicbagId"
                 >
                   −
                 </button>
-                <span class="quantity">{{ item.qty }}</span>
-                <button 
-                  class="qty-btn" 
-                  @click="updateQuantity(item.id, item.qty + 1)"
+                <span class="quantity">{{ item.quantity }}</span>
+                <button
+                  class="qty-btn"
+                  @click="updateQuantity(item.magicbagId, item.quantity + 1)"
+                  :disabled="cart.isLoading || !item.magicbagId"
                 >
                   +
                 </button>
               </div>
               
               <!-- 删除按钮 -->
-              <button 
-                class="remove-btn" 
-                @click="removeItem(item.id)"
+              <button
+                class="remove-btn"
+                @click="removeItem(item.magicbagId)"
                 title="Remove item"
+                :disabled="cart.isLoading || !item.magicbagId"
               >
                 🗑️ Remove
               </button>
@@ -78,7 +82,7 @@
 
             <!-- 小计 -->
             <div class="item-subtotal">
-              ${{ (item.price * item.qty).toFixed(2) }}
+              ${{ (item.subtotal).toFixed(2) }}
             </div>
           </div>
         </div>
@@ -104,10 +108,10 @@
             </div>
 
             <div class="checkout-actions">
-              <button class="btn-secondary" @click="clearCart">
+              <button class="btn-secondary" @click="clearCart" :disabled="cart.isLoading">
                 Clear Cart
               </button>
-              <button class="btn-primary" @click="checkout">
+              <button class="btn-primary" @click="checkout" :disabled="cart.isLoading">
                 Proceed to Checkout
               </button>
             </div>
@@ -121,70 +125,37 @@
   <div v-if="showPaymentModal" class="payment-modal-overlay" @click.self="closePaymentModal">
     <div class="payment-modal">
       <div class="payment-header">
-        <h2>💳 选择支付方式</h2>
+        <h2>💳 Choose Payment Method</h2>
         <button class="close-btn" @click="closePaymentModal">×</button>
       </div>
       
       <div class="payment-content">
         <!-- 订单摘要 -->
         <div class="order-summary">
-          <h3>订单摘要</h3>
+          <h3>Order Summary</h3>
           <div class="summary-items">
-            <div v-for="item in cart.items" :key="item.id" class="summary-item">
-              <span class="item-name">{{ item.title }}</span>
-              <span class="item-qty">×{{ item.qty }}</span>
-              <span class="item-price">${{ (item.price * item.qty).toFixed(2) }}</span>
+            <div v-for="item in cart.items" :key="item.itemId" class="summary-item">
+              <span class="item-name">{{ item.bagName }}</span>
+              <span class="item-qty">×{{ item.quantity }}</span>
+              <span class="item-price">${{ item.subtotal.toFixed(2) }}</span>
             </div>
           </div>
           <div class="summary-total">
-            <span>总计: ${{ cart.total.toFixed(2) }}</span>
+            <span>Total: ${{ cart.total.toFixed(2) }}</span>
           </div>
         </div>
 
         <!-- 支付方式选择 -->
         <div class="payment-methods">
-          <h3>选择支付方式</h3>
+          <h3>Select Payment Method</h3>
           <div class="payment-options">
-            <label class="payment-option" :class="{ active: selectedPayment === 'paypal' }">
-              <input type="radio" v-model="selectedPayment" value="paypal" />
-              <div class="payment-info">
-                <div class="payment-icon">💳</div>
-                <div class="payment-details">
-                  <div class="payment-name">PayPal</div>
-                  <div class="payment-desc">使用PayPal账户支付</div>
-                </div>
-              </div>
-            </label>
-
-            <label class="payment-option" :class="{ active: selectedPayment === 'wechat' }">
-              <input type="radio" v-model="selectedPayment" value="wechat" />
-              <div class="payment-info">
-                <div class="payment-icon">💚</div>
-                <div class="payment-details">
-                  <div class="payment-name">微信支付</div>
-                  <div class="payment-desc">使用微信扫码支付</div>
-                </div>
-              </div>
-            </label>
-
-            <label class="payment-option" :class="{ active: selectedPayment === 'alipay' }">
-              <input type="radio" v-model="selectedPayment" value="alipay" />
-              <div class="payment-info">
-                <div class="payment-icon">🔵</div>
-                <div class="payment-details">
-                  <div class="payment-name">支付宝</div>
-                  <div class="payment-desc">使用支付宝扫码支付</div>
-                </div>
-              </div>
-            </label>
-
             <label class="payment-option" :class="{ active: selectedPayment === 'mock' }">
               <input type="radio" v-model="selectedPayment" value="mock" />
               <div class="payment-info">
                 <div class="payment-icon">🧪</div>
                 <div class="payment-details">
-                  <div class="payment-name">Mock Pay (测试)</div>
-                  <div class="payment-desc">模拟支付，用于测试</div>
+                  <div class="payment-name">Mock Pay (For Testing)</div>
+                  <div class="payment-desc">Simulate payment for testing purposes</div>
                 </div>
               </div>
             </label>
@@ -195,15 +166,15 @@
       <!-- 支付按钮 -->
       <div class="payment-actions">
         <button class="btn-cancel" @click="closePaymentModal" :disabled="isProcessing">
-          取消
+          Cancel
         </button>
-        <button 
-          class="btn-pay" 
-          @click="processPayment" 
+        <button
+          class="btn-pay"
+          @click="processPayment"
           :disabled="!selectedPayment || isProcessing"
         >
-          <span v-if="isProcessing">处理中...</span>
-          <span v-else>立即支付 ${{ cart.total.toFixed(2) }}</span>
+          <span v-if="isProcessing">Processing...</span>
+          <span v-else>Pay ${{ cart.total.toFixed(2) }}</span>
         </button>
       </div>
     </div>
@@ -211,132 +182,126 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
+import { api } from '@/utils/api'
+
 const cart = useCartStore()
 const user = useUserStore()
+const router = useRouter()
 
-// 更新商品数量
-function updateQuantity(id, newQty) {
-  if (!user.isLoggedIn) {
-    window.dispatchEvent(new Event('open-login'))
-    return
+// --- 生命周期钩子 ---
+onMounted(() => {
+  if (user.isLoggedIn) {
+    cart.fetchCart()
   }
-  if (newQty <= 0) {
-    cart.remove(id)
-  } else {
-    // 找到商品并更新数量
-    const item = cart.items.find(i => i.id === id)
-    if (item) {
-      item.qty = newQty
-    }
+})
+
+// --- 购物车操作 ---
+
+async function updateQuantity(magicbagId, newQty) {
+  if (!magicbagId) {
+    console.error("updateQuantity called with invalid magicbagId:", magicbagId);
+    return;
   }
+  await cart.updateItemQuantity(magicbagId, newQty)
 }
 
-// 删除商品
-function removeItem(id) {
-  if (!user.isLoggedIn) {
-    window.dispatchEvent(new Event('open-login'))
-    return
+async function removeItem(magicbagId) {
+  if (!magicbagId) {
+    console.error("removeItem called with invalid magicbagId:", magicbagId);
+    return;
   }
-  if (confirm('Are you sure you want to remove this item?')) {
-    cart.remove(id)
-  }
+  // 🔴 修复: 移除了 confirm() 调用
+  await cart.removeItemFromCart(magicbagId)
 }
 
-// 清空购物车
-function clearCart() {
-  if (!user.isLoggedIn) {
-    window.dispatchEvent(new Event('open-login'))
-    return
-  }
-  if (confirm('Are you sure you want to clear your cart?')) {
-    cart.clear()
-  }
+async function clearCart() {
+  // 🔴 修复: 移除了 confirm() 调用
+  await cart.clearServerCart()
 }
 
-// 结算相关状态
+// --- 结算与支付 ---
+
 const showPaymentModal = ref(false)
-const selectedPayment = ref('')
+const selectedPayment = ref('mock')
 const isProcessing = ref(false)
 
-// 结算
 function checkout() {
   if (!user.isLoggedIn) {
     window.dispatchEvent(new Event('open-login'))
     return
   }
   if (cart.items.length === 0) {
-    alert('购物车为空，无法结算')
+    console.warn('Cart is empty, cannot proceed to checkout.')
     return
   }
   showPaymentModal.value = true
 }
 
-// 关闭支付模态框
 function closePaymentModal() {
   showPaymentModal.value = false
-  selectedPayment.value = ''
   isProcessing.value = false
 }
 
-// 获取支付方式名称
-function getPaymentName(payment) {
-  const names = {
-    'paypal': 'PayPal',
-    'wechat': '微信支付',
-    'alipay': '支付宝',
-    'mock': 'Mock Pay (测试)'
-  }
-  return names[payment] || payment
-}
-
-// 处理支付
 async function processPayment() {
-  if (!selectedPayment.value) {
-    alert('请选择支付方式')
-    return
-  }
+  if (!selectedPayment.value) return;
   
-  isProcessing.value = true
+  isProcessing.value = true;
   
   try {
-    // 模拟支付处理
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // 🔴 Backend team: Please implement a 'POST /api/orders' endpoint.
+    console.log("Simulating order creation...", { cartId: cart.cartId, paymentMethod: selectedPayment.value });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const mockOrderId = Date.now();
+    console.log(`Mock order created successfully, Order ID: ${mockOrderId}`);
+
+    await cart.fetchCart();
     
-    // 创建订单数据
-    const orderData = {
-      id: Date.now(),
-      items: cart.items,
-      total: cart.total,
-      paymentMethod: selectedPayment.value,
-      paymentName: getPaymentName(selectedPayment.value),
-      status: 'completed',
-      createdAt: new Date().toISOString()
-    }
-    
-    // 这里可以调用后端API保存订单
-    // await api.post('/orders', orderData)
-    
-    alert(`支付成功！\n订单号: ${orderData.id}\n支付方式: ${orderData.paymentName}\n金额: $${orderData.total.toFixed(2)}`)
-    
-    // 清空购物车
-    cart.clear()
-    
-    // 关闭模态框
-    closePaymentModal()
-    
+    closePaymentModal();
+
+    router.push('/order-history');
+
   } catch (error) {
-    console.error('支付处理失败:', error)
-    alert('支付处理失败，请稍后重试')
+    console.error('Payment processing or order creation failed:', error);
   } finally {
-    isProcessing.value = false
+    isProcessing.value = false;
   }
 }
 </script>
 
 <style scoped>
+/* (样式保持不变) */
+.loading-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.spinner {
+  border: 4px solid rgba(0,0,0,0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #09f;
+  animation: spin 1s ease infinite;
+  margin: 0 auto 20px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.item-error-notice {
+  color: #e74c3c;
+  font-size: 12px;
+  margin: 4px 0 0 0;
+  font-weight: 500;
+}
+
 .cart-page {
   min-height: 100vh;
   background: #f8f9fa;
@@ -905,3 +870,4 @@ async function processPayment() {
   }
 }
 </style>
+

@@ -137,4 +137,3 @@ export const useUserStore = defineStore('user', () => {
     login, logout, initialize, fetchUserLocation, updateUserProfile,
   };
 });
-

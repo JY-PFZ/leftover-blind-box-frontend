@@ -64,7 +64,7 @@
           :key="p.id"
           :product="p"
           :require-login="true"
-          @add="cart.add(p)"
+          @add="cart.addItemToCart(p)"
           @open="openProduct(p)"
         />
       </div>
@@ -145,7 +145,7 @@ const sortedProducts = computed(() => {
     sortedMerchants.value.forEach(merchant => {
       productsToSort.forEach(product => {
         if (product.merchantId === parseInt(merchant.id)) {
-           orderedProducts.push(product);
+            orderedProducts.push(product);
         }
       });
     });
@@ -262,4 +262,3 @@ button:disabled {
   cursor: not-allowed;
 }
 </style>
-
