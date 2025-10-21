@@ -1,50 +1,33 @@
 <template>
   <div class="card">
-    <!-- 产品图片区：强化视觉焦点 + 标签 -->
+    <!-- 产品图片区：适配 imageUrl 并提供 fallback -->
     <div class="thumb relative overflow-hidden">
       <img 
-        v-if="product.image" 
-        :src="product.image" 
+        v-if="product.imageUrl" 
+        :src="product.imageUrl" 
         :alt="product.title" 
         class="w-full h-120 object-cover transition-transform duration-500 hover:scale-105"
       />
-      <div v-else class="thumb-fallback w-full h-120 bg-gradient-to-r from-cream-200 to-pink-200"></div>
-      
-      <!-- 产品标签（热销/新品等） -->
-      <div v-if="product.tags && product.tags.length" class="absolute top-3 left-3 flex flex-wrap gap-1">
-        <span 
-          v-for="tag in product.tags.slice(0, 2)" 
-          :key="tag" 
-          class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full shadow-sm"
-        >
-          {{ tag }}
-        </span>
+      <div v-else class="thumb-fallback w-full h-120 bg-gradient-to-r from-cream-200 to-pink-200 flex items-center justify-center">
+        <span class="text-gray-500 text-sm">No Image</span>
       </div>
     </div>
 
-    <!-- 产品信息区：排版优化 + 价格对比 -->
+    <!-- 产品信息区：优雅处理 null 价格 -->
     <div class="content p-4">
       <h3 class="title font-bold text-lg text-gray-800 mb-2 line-clamp-1">{{ product.title }}</h3>
       <div class="price-row flex justify-between items-center mb-3">
-        <span class="text-red-600 font-bold text-lg">${{ product.price.toFixed(2) }}</span>
-        <span v-if="product.originalPrice" class="text-gray-400 line-through text-sm">${{ product.originalPrice.toFixed(2) }}</span>
+        <!-- **核心修复**: 检查 price 是否为 null -->
+        <span v-if="product.price !== null" class="text-red-600 font-bold text-lg">${{ product.price.toFixed(2) }}</span>
+        <span v-else class="text-gray-400 text-sm">Price not set</span>
       </div>
-      <p class="description text-gray-500 text-sm mb-4 line-clamp-2">{{ product.description || 'Delicious candy made with premium ingredients.' }}</p>
+      <p class="description text-gray-500 text-sm mb-4 line-clamp-2">{{ product.description || 'Delicious item made with premium ingredients.' }}</p>
       
-      <!-- 商家距离信息 -->
-      <div v-if="merchantDistance" class="mb-3 flex items-center gap-2 text-xs text-gray-500">
-        <span class="text-green-500">📍</span>
-        <span>{{ product.merchant.name }}</span>
-        <span class="text-green-600 font-medium">{{ merchantDistance }}</span>
-      </div>
-      
-      <!-- 操作按钮区：明确交互 + 视觉层级 -->
+      <!-- 操作按钮区 -->
       <div class="actions flex gap-2">
         <button 
           class="btn add flex-1" 
           @click="handleAdd"
-          @mousedown="() => console.log('Add to Cart button mousedown')"
-          @mouseup="() => console.log('Add to Cart button mouseup')"
         >
           Add to Cart
         </button>
@@ -64,113 +47,91 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { mockLogin as doMockLogin } from '@/mocks/data.js'
-import { useUserStore } from '@/stores/user'
-import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
+import { computed } from 'vue';
+import { useUserStore } from '@/stores/user';
+// **注意**: 距离计算暂时无法工作，因为商品数据中缺少完整的商家信息
+// import { getMerchantDistance, formatDistance } from '@/utils/geoUtils';
 
 const props = defineProps({ 
   product: { type: Object, required: true },
   requireLogin: { type: Boolean, default: true }
-})
+});
 
-const user = useUserStore()
-const isLoggedIn = computed(() => user.isLoggedIn)
+const user = useUserStore();
+const isLoggedIn = computed(() => user.isLoggedIn);
 
-// 计算商家距离
-const merchantDistance = computed(() => {
-  if (!props.product.merchant || !user.userLocation || !user.userLocation.value) return null
-  const distance = getMerchantDistance(props.product.merchant, user.userLocation.value)
-  return distance ? formatDistance(distance) : null
-})
-
-const emit = defineEmits(['add', 'open'])
+const emit = defineEmits(['add', 'open']);
 
 function handleAdd() {
-  console.log('Add to Cart clicked!', {
-    requireLogin: props.requireLogin,
-    isLoggedIn: isLoggedIn.value,
-    product: props.product
-  })
-  
   if (props.requireLogin && !isLoggedIn.value) {
-    console.log('User not logged in, opening login modal')
-    window.dispatchEvent(new Event('open-login'))
-    return
+    window.dispatchEvent(new Event('open-login'));
+    return;
   }
-  
-  console.log('Adding product to cart:', props.product)
-  emit('add', props.product)
-  
-  // 触发购物车徽章动画
-  window.dispatchEvent(new Event('cart-item-added'))
+  emit('add', props.product);
+  window.dispatchEvent(new Event('cart-item-added'));
 }
 
 function handleView() {
   if (props.requireLogin && !isLoggedIn.value) {
-    window.dispatchEvent(new Event('open-login'))
-    return
+    window.dispatchEvent(new Event('open-login'));
+    return;
   }
-  emit('open', props.product)
-}
-
-function mockLogin() {
-  doMockLogin(user)
+  emit('open', props.product);
 }
 </script>
 
 <style scoped>
-/* 自定义颜色：甜品店奶油色系 */
+/* 自定义颜色 */
 :root {
   --cream-200: #fee8d2;
   --pink-200: #ffd1dc;
 }
 
-/* 卡片基础样式：分层与 hover 动效 */
+/* 卡片基础样式 */
 .card {
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 .card:hover {
   transform: translateY(-6px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
 }
 
-/* 图片区：渐变 fallback +  hover 缩放 */
+/* 图片区 */
 .thumb {
   height: 120px;
 }
 .thumb-fallback {
   background: linear-gradient(135deg, var(--cream-200), var(--pink-200));
 }
-.thumb img {
-  transition: transform 0.5s ease;
-}
 
-/* 信息区：排版与间距优化 */
+/* 信息区 */
 .content {
   padding: 12px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 .title {
   font-size: 16px;
   margin: 4px 0 6px;
 }
-.price-row {
-  margin-bottom: 8px;
-}
 .description {
   margin-bottom: 10px;
+  flex-grow: 1; /* 让描述占据多余空间 */
 }
 
-/* 按钮样式：明确交互反馈 */
+/* 按钮样式 */
 .actions {
   display: flex;
   gap: 8px;
+  margin-top: auto; /* 将按钮推到底部 */
 }
-
 .btn {
   border: none;
   border-radius: 8px;
@@ -180,21 +141,15 @@ function mockLogin() {
   line-height: 1;
   transition: all 0.2s ease;
 }
-.btn:disabled{ opacity:.6; cursor:not-allowed; }
-
-/* Add to Cart 按钮：突出视觉层级 */
 .btn.add {
   padding: 8px 12px;
   background: #22c55e;
   color: #fff;
+  flex: 1;
 }
 .btn.add:hover {
   background: #16a34a;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
 }
-
-/* View 按钮：图标+文字 统一风格 */
 .btn.view {
   display: inline-flex;
   align-items: center;
@@ -202,7 +157,6 @@ function mockLogin() {
   padding: 8px 10px;
   background: #eef2ff;
   color: #4338ca;
-  min-width: 64px;
   justify-content: center;
 }
 .btn.view .i {
@@ -211,7 +165,5 @@ function mockLogin() {
 }
 .btn.view:hover {
   background: #e0e7ff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(67, 56, 202, 0.2);
 }
 </style>
