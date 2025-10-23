@@ -27,9 +27,10 @@
       <div class="actions flex gap-2">
         <button 
           class="btn add flex-1" 
-          @click="handleAdd"
+          @click="handleOrder"
+          :disabled="product.soldOut"
         >
-          Add to Cart
+          {{ product.soldOut ? '已售罄' : '立即下单' }}
         </button>
         <button 
           class="btn view" 
@@ -49,6 +50,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { useOrderStore } from '@/stores/order';
 // **注意**: 距离计算暂时无法工作，因为商品数据中缺少完整的商家信息
 // import { getMerchantDistance, formatDistance } from '@/utils/geoUtils';
 
@@ -58,9 +60,10 @@ const props = defineProps({
 });
 
 const user = useUserStore();
+const orderStore = useOrderStore();
 const isLoggedIn = computed(() => user.isLoggedIn);
 
-const emit = defineEmits(['add', 'open']);
+const emit = defineEmits(['add', 'open', 'order']);
 
 function handleAdd() {
   if (props.requireLogin && !isLoggedIn.value) {
@@ -69,6 +72,64 @@ function handleAdd() {
   }
   emit('add', props.product);
   window.dispatchEvent(new Event('cart-item-added'));
+}
+
+async function handleOrder() {
+  if (props.requireLogin && !isLoggedIn.value) {
+    window.dispatchEvent(new Event('open-login'));
+    return;
+  }
+  
+  if (props.product.soldOut) {
+    alert('商品已售罄，无法下单');
+    return;
+  }
+  
+  try {
+    // 准备订单数据 - 前端价格计算
+    const unitPrice = Number(props.product.price || 0);
+    const quantity = 1;
+    const totalAmount = Number((unitPrice * quantity).toFixed(2));
+    
+    console.log('💰 商品卡片价格计算:', {
+      productId: props.product.id,
+      productTitle: props.product.title,
+      unitPrice: unitPrice,
+      quantity: quantity,
+      totalAmount: totalAmount,
+      calculation: `${unitPrice} × ${quantity} = ${totalAmount}`
+    });
+    
+    const orderData = {
+      productId: props.product.id,
+      merchantId: props.product.merchantId,
+      customerId: user.userProfile?.id,
+      productTitle: props.product.title,
+      productPrice: unitPrice,
+      quantity: quantity,
+      totalAmount: totalAmount,
+      status: 'pending',
+      orderDate: new Date().toISOString(),
+      pickupTime: props.product.pickupStartTime || '09:00:00',
+      pickupEndTime: props.product.pickupEndTime || '18:00:00'
+    };
+    
+    console.log('🔄 准备创建订单:', orderData);
+    
+    const result = await orderStore.createOrder(orderData);
+    
+    if (result.success) {
+      // 不再显示"下单成功"，因为这只是加到购物车
+      // alert('下单成功！订单号：' + result.data.id);
+      emit('order', result.data);
+      window.dispatchEvent(new Event('order-created'));
+    } else {
+      alert('添加到购物车失败：' + result.error);
+    }
+  } catch (error) {
+    console.error('❌ 下单失败:', error);
+    alert('下单失败，请重试');
+  }
 }
 
 function handleView() {

@@ -4,9 +4,11 @@ import { useUserStore } from '@/stores/user'
 const HomeView = () => import('@/views/HomeView.vue')
 const ProfileView = () => import('@/views/ProfileView.vue')
 const OrderHistoryView = () => import('@/views/OrderHistoryView.vue')
+const OrderListView = () => import('@/views/OrderListView.vue')
 const CartView = () => import('@/views/CartView.vue')
 const MerchantView = () => import('@/views/MerchantView.vue')
 const MerchantDashboardView = () => import('@/views/MerchantDashboardView.vue')
+const ProductManagementView = () => import('@/views/ProductManagementView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,12 +16,19 @@ const router = createRouter({
     { path: '/', name: 'home', component: HomeView },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
     { path: '/order-history', name: 'order-history', component: OrderHistoryView, meta: { requiresAuth: true } },
+    { path: '/orders', name: 'orders', component: OrderListView, meta: { requiresAuth: true } },
     { path: '/cart', name: 'cart', component: CartView, meta: { requiresAuth: true } },
     { path: '/merchant/:id', name: 'merchant', component: MerchantView, meta: { requiresAuth: true } },
     { 
       path: '/merchant/dashboard', 
       name: 'merchant-dashboard', 
       component: MerchantDashboardView, 
+      meta: { requiresAuth: true, requiresRole: 'merchant' }
+    },
+    { 
+      path: '/merchant/products', 
+      name: 'merchant-products', 
+      component: ProductManagementView, 
       meta: { requiresAuth: true, requiresRole: 'merchant' }
     }
   ]
@@ -33,7 +42,13 @@ router.beforeEach(async (to, from, next) => {
 
   // 如果 store 尚未初始化，则先执行初始化
   if (!userStore.isInitialized) {
-    await userStore.initialize();
+    await userStore.ensureAuth();
+  }
+
+  // **新增**: 检查 token 有效性
+  if (!userStore.checkTokenValidity()) {
+    console.log('[Router Guard] Token已过期，重定向到首页');
+    return next({ name: 'home' });
   }
 
   const isLoggedIn = userStore.isLoggedIn;
@@ -41,10 +56,12 @@ router.beforeEach(async (to, from, next) => {
   const requiredRole = to.meta.requiresRole;
 
   if (to.meta.requiresAuth && !isLoggedIn) {
+    console.log('[Router Guard] 需要登录但未登录，重定向到首页');
     return next({ name: 'home' });
   }
 
   if (requiredRole && userRole !== requiredRole) {
+    console.log(`[Router Guard] 需要${requiredRole}角色但当前是${userRole}，重定向到首页`);
     return next({ name: 'home' }); 
   }
 
