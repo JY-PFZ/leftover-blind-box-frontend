@@ -63,8 +63,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { api } from '@/utils/api';
-// **核心修复：不再需要 JSEncrypt**
-// import { JSEncrypt } from 'jsencrypt';
+// **使用明文密码**
 
 const emit = defineEmits(['close']);
 
@@ -120,10 +119,10 @@ const onSubmit = async () => {
   loading.value = true;
   
   try {
-    // **核心修复：直接发送原始密码**
+    // **使用明文密码**
     const payload = {
       username: form.email,
-      password: form.password, // 直接使用原始密码
+      password: form.password, // 使用明文密码
       role: form.role.toUpperCase(),
       // 商家专属字段
       name: form.shopName,
@@ -133,13 +132,45 @@ const onSubmit = async () => {
       longitude: form.longitude,
     };
     
-    await api.post('/user/register', payload);
+    const registerResponse = await api.post('/user/register', payload);
     
-    successMsg.value = '✅ Registration successful! An activation email has been sent. Please check your inbox.';
-    
-    setTimeout(() => {
-      emit('close');
-    }, 3000);
+    // 检查注册是否真正成功
+    if (registerResponse.data.code === 1 || registerResponse.data.code === 200) {
+      successMsg.value = '✅ Registration successful! Auto-logging in...';
+      
+      // 注册成功后自动登录
+      try {
+        // 使用明文密码进行登录
+        const loginResponse = await api.post('/auth/login', {
+          username: form.email,
+          password: form.password // 使用明文密码
+        });
+        
+        const token = loginResponse.headers['X-New-Token'] || loginResponse.headers['x-new-token'];
+        if (token) {
+          // 保存登录状态
+          localStorage.setItem('token', token);
+          localStorage.setItem('username', form.email);
+          localStorage.setItem('role', form.role.toLowerCase());
+          
+          // 触发全局事件，通知其他组件刷新数据
+          window.dispatchEvent(new CustomEvent('user-login-success'));
+          
+          successMsg.value = '✅ Registration & Login successful! Loading products...';
+        }
+      } catch (loginError) {
+        console.log('自动登录失败，请手动登录');
+        successMsg.value = '✅ Registration successful! Please login manually.';
+      }
+      
+      setTimeout(() => {
+        emit('close');
+      }, 2000);
+    } else {
+      // 注册失败，显示错误信息
+      const message = registerResponse.data.message || 'Registration failed.';
+      errorMsg.value = `FAIL: ${message}`;
+    }
     
   } catch (error) {
     const message = error.response?.data?.message || error.message || 'Registration failed.';

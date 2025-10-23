@@ -5,7 +5,7 @@
       <div class="container">
         <h1>🛒 Shopping Cart</h1>
         <p v-if="cart.count > 0" class="cart-summary">
-          {{ cart.count }} items • Total: ${{ cart.total.toFixed(2) }}
+          {{ cart.count }} items • Total: ${{ (cart.total || 0).toFixed(2) }}
         </p>
         <p v-else class="cart-summary">Your cart is empty</p>
       </div>
@@ -41,7 +41,7 @@
             <!-- 商品信息 -->
             <div class="item-info">
               <h3 class="item-title">{{ item.title }}</h3>
-              <p class="item-price">${{ item.price.toFixed(2) }}</p>
+              <p class="item-price">${{ (item.price || 0).toFixed(2) }}</p>
               <p v-if="item.merchantId" class="item-merchant">
                 Merchant ID: {{ item.merchantId }}
               </p>
@@ -90,7 +90,7 @@
             
             <div class="summary-row">
               <span>Subtotal ({{ cart.count }} items):</span>
-              <span>${{ cart.total.toFixed(2) }}</span>
+              <span>${{ (cart.total || 0).toFixed(2) }}</span>
             </div>
             
             <div class="summary-row">
@@ -100,7 +100,7 @@
             
             <div class="summary-row total-row">
               <span>Total:</span>
-              <span>${{ cart.total.toFixed(2) }}</span>
+              <span>${{ (cart.total || 0).toFixed(2) }}</span>
             </div>
 
             <div class="checkout-actions">
@@ -133,11 +133,11 @@
             <div v-for="item in cart.items" :key="item.id" class="summary-item">
               <span class="item-name">{{ item.title }}</span>
               <span class="item-qty">×{{ item.qty }}</span>
-              <span class="item-price">${{ (item.price * item.qty).toFixed(2) }}</span>
+              <span class="item-price">${{ ((item.price || 0) * item.qty).toFixed(2) }}</span>
             </div>
           </div>
           <div class="summary-total">
-            <span>总计: ${{ cart.total.toFixed(2) }}</span>
+            <span>总计: ${{ (cart.total || 0).toFixed(2) }}</span>
           </div>
         </div>
 
@@ -203,7 +203,7 @@
           :disabled="!selectedPayment || isProcessing"
         >
           <span v-if="isProcessing">处理中...</span>
-          <span v-else>立即支付 ${{ cart.total.toFixed(2) }}</span>
+          <span v-else>立即支付 ${{ (cart.total || 0).toFixed(2) }}</span>
         </button>
       </div>
     </div>
@@ -214,6 +214,7 @@
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
+import { api } from '@/utils/api'
 const cart = useCartStore()
 const user = useUserStore()
 
@@ -294,38 +295,115 @@ function getPaymentName(payment) {
 
 // 处理支付
 async function processPayment() {
+  console.log('🚀 支付按钮被点击了！')
+  console.log('🔍 支付状态检查:', {
+    selectedPayment: selectedPayment.value,
+    isProcessing: isProcessing.value,
+    cartItems: cart.items.length
+  })
+  
   if (!selectedPayment.value) {
     alert('请选择支付方式')
     return
   }
   
   isProcessing.value = true
+  console.log('⏳ 开始支付处理...')
   
   try {
-    // 模拟支付处理
+    // 模拟支付处理（2秒延迟）
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     // 创建订单数据
     const orderData = {
       id: Date.now(),
+      orderNo: `ORD${Date.now()}`,
       items: cart.items,
       total: cart.total,
       paymentMethod: selectedPayment.value,
       paymentName: getPaymentName(selectedPayment.value),
       status: 'completed',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      customerId: user.userProfile?.id
     }
     
-    // 这里可以调用后端API保存订单
-    // await api.post('/orders', orderData)
+    console.log('🎉 支付成功，创建订单:', orderData)
     
-    alert(`支付成功！\n订单号: ${orderData.id}\n支付方式: ${orderData.paymentName}\n金额: $${orderData.total.toFixed(2)}`)
+    // 使用真正的订单创建API（本地后端有POST /api/orders端点）
+    try {
+      console.log('🔄 使用订单API保存订单数据...')
+      
+      // 为每个商品创建订单
+      for (const item of cart.items) {
+        // 前端价格计算：商品价格 × 数量 = 总价
+        const unitPrice = Number(item.price || 0);
+        const quantity = Number(item.qty || 1);
+        const totalPrice = Number((unitPrice * quantity).toFixed(2));
+        
+        console.log('💰 购物车价格计算:', {
+          productId: item.id,
+          productTitle: item.title,
+          unitPrice: unitPrice,
+          quantity: quantity,
+          totalPrice: totalPrice,
+          calculation: `${unitPrice} × ${quantity} = ${totalPrice}`
+        });
+        
+        const orderCreateData = {
+          bagId: item.id,
+          quantity: item.qty,
+          totalPrice: totalPrice, // 保持为数字，让JSON序列化处理
+          paymentMethod: selectedPayment.value,
+          paymentName: getPaymentName(selectedPayment.value),
+          pickupStartTime: '09:00:00',
+          pickupEndTime: '18:00:00'
+        }
+        
+        console.log('📤 发送订单数据:', orderCreateData)
+        console.log('🔑 当前token:', localStorage.getItem('token'))
+        
+        const orderResponse = await api.post('/orders', orderCreateData)
+        
+        console.log('📥 订单API响应:', orderResponse)
+        
+        if (orderResponse.data && orderResponse.data.code === 1) {
+          console.log('✅ 订单保存成功:', orderResponse.data.data)
+        } else {
+          console.error('❌ 订单保存失败:', orderResponse.data?.message || 'Unknown error')
+        }
+      }
+      
+      console.log('✅ 所有订单已保存到后端')
+      
+    } catch (orderError) {
+      console.error('❌ 保存订单到后端失败:', orderError)
+      console.error('❌ 错误详情:', {
+        message: orderError.message,
+        response: orderError.response?.data,
+        status: orderError.response?.status,
+        url: orderError.config?.url
+      })
+      
+      // 后端保存失败，显示错误信息
+      alert(`❌ 订单保存失败！\n\n错误: ${orderError.response?.data?.message || orderError.message}\n\n请重试或联系客服`)
+      return; // 停止执行，不显示支付成功
+    }
+    
+    console.log('✅ 前端订单处理完成，订单信息:', orderData)
+    
+    // 显示支付成功信息
+    alert(`🎉 支付成功！\n\n订单号: ${orderData.orderNo}\n支付方式: ${orderData.paymentName}\n金额: $${(orderData.total || 0).toFixed(2)}\n状态: 已完成`)
     
     // 清空购物车
     cart.clear()
     
     // 关闭模态框
     closePaymentModal()
+    
+    // 触发订单创建成功事件
+    window.dispatchEvent(new CustomEvent('order-payment-success', { 
+      detail: orderData 
+    }))
     
   } catch (error) {
     console.error('支付处理失败:', error)

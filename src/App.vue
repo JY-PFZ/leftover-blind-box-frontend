@@ -3,9 +3,11 @@
     <!-- 商家导航栏 -->
     <nav v-if="user.role === 'merchant'" class="navbar">
       <div class="logo">Sugar Rush</div>
-      <ul class="nav-links">
-        <li><RouterLink to="/merchant/dashboard">Dashboard</RouterLink></li>
-      </ul>
+      <ul class="nav-links">
+        <li><RouterLink to="/merchant/dashboard">Dashboard</RouterLink></li>
+        <li><RouterLink to="/merchant/products">商品管理</RouterLink></li>
+        <li><RouterLink to="/orders">订单管理</RouterLink></li>
+      </ul>
       <div class="actions">
         <div class="user-info">
           <span class="merchant-badge">Merchant</span>
@@ -18,13 +20,13 @@
     <!-- 顾客/访客导航栏 -->
     <nav v-else class="navbar">
       <div class="logo">Sugar Rush</div>
-      <ul class="nav-links">
-        <li><RouterLink to="/">Home</RouterLink></li>
-        <li><a href="#">About Us</a></li>
-        <li><a href="#">Shop</a></li>
-        <li><RouterLink to="/profile">My Profile</RouterLink></li>
-        <li><RouterLink to="/order-history">Orders</RouterLink></li>
-      </ul>
+      <ul class="nav-links">
+        <li><RouterLink to="/">Home</RouterLink></li>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Shop</a></li>
+        <li><RouterLink to="/profile">My Profile</RouterLink></li>
+        <li><RouterLink to="/orders">我的订单</RouterLink></li>
+      </ul>
       <div class="actions">
         <template v-if="!user.isLoggedIn">
           <button @click="showSignup = true" class="signup-btn">Sign Up</button>
@@ -73,7 +75,11 @@ const handleLogout = () => {
 };
 
 const handleOpenLogin = () => {
-  showLogin.value = true;
+  showLogin.value = true;
+};
+
+const handleOpenSignup = () => {
+  showSignup.value = true;
 };
 
 // 3. 定义事件处理函数
@@ -82,15 +88,41 @@ const handleMerchantLogin = () => {
   router.push('/merchant/dashboard');
 };
 
+// 处理用户登录成功事件
+const handleUserLoginSuccess = () => {
+  console.log('[App.vue] 监听到用户登录成功事件，刷新用户状态');
+  // 重新初始化用户状态
+  user.initialize();
+};
+
+// **新增**: 处理全局登出事件
+const handleUserLogout = () => {
+  console.log('[App.vue] 监听到用户登出事件，刷新UI状态');
+  // 如果当前在需要登录的页面，重定向到首页
+  if (router.currentRoute.value.meta.requiresAuth) {
+    router.push('/');
+  }
+};
+
 onMounted(async () => {
-  window.addEventListener('open-login', handleOpenLogin);
+  window.addEventListener('open-login', handleOpenLogin);
+  window.addEventListener('open-login-modal', handleOpenLogin);
+  window.addEventListener('open-signup-modal', handleOpenSignup);
+  window.addEventListener('user-login-success', handleUserLoginSuccess);
+  // **新增**: 监听全局登出事件
+  window.addEventListener('user-logout', handleUserLogout);
   // 4. 在组件挂载时开始监听全局事件
   window.addEventListener('merchant-login-success', handleMerchantLogin);
-  await user.initialize();
+  await user.initialize();
 });
 
 onUnmounted(() => {
-  window.removeEventListener('open-login', handleOpenLogin);
+  window.removeEventListener('open-login', handleOpenLogin);
+  window.removeEventListener('open-login-modal', handleOpenLogin);
+  window.removeEventListener('open-signup-modal', handleOpenSignup);
+  window.removeEventListener('user-login-success', handleUserLoginSuccess);
+  // **新增**: 移除全局登出事件监听
+  window.removeEventListener('user-logout', handleUserLogout);
   // 5. 在组件卸载时移除监听，防止内存泄漏
   window.removeEventListener('merchant-login-success', handleMerchantLogin);
 });
