@@ -7,11 +7,13 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig({
   server: {
+    port: 5173,
     proxy: {
       '/api': {
-        // 将目标地址修改为你本地的后端服务
-        target: 'http://localhost:10015', 
+        // 临时使用远端后端，避免本地后端未启动导致 500
+        target: 'http://54.169.196.90:10015', 
         changeOrigin: true,
+        secure: false,
         // (可选) 如果后端API路径不包含/api，可能需要路径重写
         // rewrite: (path) => path.replace(/^\/api/, '') 
       }

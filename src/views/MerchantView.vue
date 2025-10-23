@@ -407,7 +407,7 @@ import ProductCard from '@/components/ProductCard.vue'
 import ProductModal from '@/components/ProductModal.vue'
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
-import { mockProducts, mockMerchants, mockReviews } from '@/mocks/data.js'
+import { api } from '@/utils/api'
 import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
 
 const route = useRoute()
@@ -417,6 +417,8 @@ const { userLocation } = storeToRefs(user)
 const merchant = ref(null)
 const products = ref([])
 const reviews = ref([])
+const loading = ref(false)
+const errorMessage = ref('')
 const showProduct = ref(false)
 const selected = ref(null)
 
@@ -450,6 +452,98 @@ const merchantDistance = computed(() => {
 })
 
 function openProduct(p){ selected.value = p; showProduct.value = true }
+
+// 统一错误解析
+function parseApiError(err){
+  if (!err) return '未知错误'
+  if (err.response){
+    const status = err.response.status
+    const msg = err.response.data?.message || err.message
+    switch(status){
+      case 400: return `请求参数错误: ${msg}`
+      case 401: return `未登录或登录已过期: ${msg}`
+      case 403: return `无权限执行此操作: ${msg}`
+      case 404: return `资源不存在: ${msg}`
+      case 409: return `业务冲突: ${msg}`
+      case 422: return `数据校验失败: ${msg}`
+      case 500: return `服务器异常: ${msg}`
+      default: return `请求失败(${status}): ${msg}`
+    }
+  }
+  if (err.request){
+    return '网络异常或后端不可达'
+  }
+  return err.message || '未知错误'
+}
+
+// 加载商家商品（全量 API）
+async function loadMerchantProducts(){
+  loading.value = true
+  errorMessage.value = ''
+  try{
+    if (!merchantId.value){
+      throw new Error('缺少商家ID')
+    }
+    // 获取商家商品列表
+    const resp = await api.get(`/magic-bags/merchant/${merchantId.value}`)
+    const list = resp.data?.data || []
+    products.value = Array.isArray(list) ? list : []
+  }catch(err){
+    const reason = parseApiError(err)
+    errorMessage.value = reason
+    console.error('[MerchantView] 加载商家商品失败:', { reason, err })
+    alert(`❌ 加载商家商品失败\n\n原因: ${reason}`)
+  }finally{
+    loading.value = false
+  }
+}
+
+// 新建商品（商家）
+async function createMagicBag(payload){
+  try{
+    const resp = await api.post('/magic-bags', payload)
+    const item = resp.data?.data
+    if (item) products.value.unshift(item)
+    return { success: true, data: item }
+  }catch(err){
+    const reason = parseApiError(err)
+    console.error('[MerchantView] 新增商品失败:', { reason, err, payload })
+    alert(`❌ 新增商品失败\n\n原因: ${reason}`)
+    return { success: false, message: reason }
+  }
+}
+
+// 更新商品
+async function updateMagicBag(id, payload){
+  try{
+    const resp = await api.put(`/magic-bags/${id}`, payload)
+    const updated = resp.data?.data
+    if (updated){
+      const idx = products.value.findIndex(p => p.id === id)
+      if (idx >= 0) products.value[idx] = updated
+    }
+    return { success: true, data: updated }
+  }catch(err){
+    const reason = parseApiError(err)
+    console.error('[MerchantView] 更新商品失败:', { reason, err, id, payload })
+    alert(`❌ 更新商品失败\n\n原因: ${reason}`)
+    return { success: false, message: reason }
+  }
+}
+
+// 删除商品（软删）
+async function deleteMagicBag(id){
+  try{
+    await api.delete(`/magic-bags/${id}`)
+    products.value = products.value.filter(p => p.id !== id)
+    return { success: true }
+  }catch(err){
+    const reason = parseApiError(err)
+    console.error('[MerchantView] 删除商品失败:', { reason, err, id })
+    alert(`❌ 删除商品失败\n\n原因: ${reason}`)
+    return { success: false, message: reason }
+  }
+}
 
 // 提交评论
 function submitReview() {
@@ -515,15 +609,13 @@ function formatDate(date) {
   }).format(new Date(date))
 }
 
-watchEffect(() => {
+watchEffect(async () => {
   const id = merchantId.value
   console.log('Loading merchant with ID:', id)
-  merchant.value = mockMerchants.find(m => Number(m.id) === id) || null
-  products.value = mockProducts.filter(p => Number(p.merchant?.id) === id)
-  reviews.value = mockReviews.filter(r => Number(r.merchantId) === id)
-  console.log('Merchant loaded:', merchant.value)
-  console.log('Products loaded:', products.value.length, 'items')
-  console.log('Reviews loaded:', reviews.value.length, 'reviews')
+  // 备注：当前暂无商家详情API，这里仅加载商品；后续可补充 /api/merchant/{id}
+  await loadMerchantProducts()
+  // 评论先空置或待后端API
+  reviews.value = []
 })
 </script>
 

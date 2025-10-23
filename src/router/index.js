@@ -7,6 +7,9 @@ const OrderHistoryView = () => import('@/views/OrderHistoryView.vue')
 const CartView = () => import('@/views/CartView.vue')
 const MerchantView = () => import('@/views/MerchantView.vue')
 const MerchantDashboardView = () => import('@/views/MerchantDashboardView.vue')
+const MerchantProductsView = () => import('@/views/MerchantProductsView.vue')
+const MerchantOrdersView = () => import('@/views/MerchantOrdersView.vue')
+const MerchantProfileView = () => import('@/views/MerchantProfileView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +23,24 @@ const router = createRouter({
       path: '/merchant/dashboard', 
       name: 'merchant-dashboard', 
       component: MerchantDashboardView, 
+      meta: { requiresAuth: true, requiresRole: 'merchant' }
+    },
+    {
+      path: '/merchant/products',
+      name: 'merchant-products',
+      component: MerchantProductsView,
+      meta: { requiresAuth: true, requiresRole: 'merchant' }
+    },
+    {
+      path: '/merchant/orders',
+      name: 'merchant-orders',
+      component: MerchantOrdersView,
+      meta: { requiresAuth: true, requiresRole: 'merchant' }
+    },
+    {
+      path: '/merchant/profile',
+      name: 'merchant-profile',
+      component: MerchantProfileView,
       meta: { requiresAuth: true, requiresRole: 'merchant' }
     }
   ]

@@ -3,6 +3,46 @@ import { defineStore } from 'pinia';
 import { api } from '@/utils/api';
 
 // --- 辅助函数 ---
+function base64UrlDecode(input) {
+  try {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    return atob(padded);
+  } catch {
+    return '';
+  }
+}
+
+function decodeJwtPayload(token) {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const json = base64UrlDecode(parts[1]);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function extractRoleFromToken(token) {
+  const claims = decodeJwtPayload(token);
+  if (!claims) return null;
+  const normalize = (v) => (typeof v === 'string' ? v.toLowerCase() : v);
+  const candidates = [];
+  if (claims.role) candidates.push(claims.role);
+  if (claims.roles) candidates.push(Array.isArray(claims.roles) ? claims.roles[0] : claims.roles);
+  if (claims.authority) candidates.push(claims.authority);
+  if (claims.authorities) candidates.push(Array.isArray(claims.authorities) ? claims.authorities[0] : claims.authorities);
+  if (claims.scope) candidates.push(Array.isArray(claims.scope) ? claims.scope[0] : claims.scope);
+  for (const c of candidates) {
+    if (!c) continue;
+    const s = String(Array.isArray(c) ? c[0] : c).toLowerCase();
+    if (s.startsWith('role_')) return s.replace('role_', '');
+    if (['merchant','admin','super_admin','user','customer'].includes(s)) return s;
+  }
+  return null;
+}
 const getUserLocation = () => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -46,8 +86,11 @@ export const useUserStore = defineStore('user', () => {
 
     } catch (error) {
       console.error("[UserStore] 获取用户资料失败:", error);
-      // 如果获取失败（例如 Token 过期），则执行登出
-      logout();
+      // 仅在未授权时登出；其它错误保留登录态，避免误登出影响路由
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        logout();
+      }
     }
   };
   
@@ -83,7 +126,10 @@ export const useUserStore = defineStore('user', () => {
         password: password
       });
 
-      const receivedToken = response.headers['x-new-token'];
+      // 同时尝试从响应头与响应体读取 token
+      const headerToken = response.headers && (response.headers['x-new-token'] || response.headers['X-New-Token']);
+      const bodyToken = response.data && response.data.data && response.data.data.token;
+      const receivedToken = headerToken || bodyToken;
       if (!receivedToken) throw new Error('Login response did not contain a token.');
       
       token.value = receivedToken;
@@ -91,7 +137,25 @@ export const useUserStore = defineStore('user', () => {
       api.defaults.headers.common['Authorization'] = `Bearer ${receivedToken}`;
       isLoggedIn.value = true;
 
-      // **修改**: 登录成功后，调用 fetchUserProfile 来获取真实的角色和信息
+      // 可选：从响应体同步用户名与角色
+      const bodyUsername = response.data && response.data.data && response.data.data.username;
+      const bodyRole = response.data && response.data.data && response.data.data.role;
+      if (bodyUsername) {
+        username.value = bodyUsername;
+        localStorage.setItem('username', bodyUsername);
+      }
+      if (bodyRole) {
+        role.value = (bodyRole || '').toLowerCase();
+        localStorage.setItem('role', role.value);
+      } else {
+        const inferred = extractRoleFromToken(receivedToken);
+        if (inferred) {
+          role.value = inferred;
+          localStorage.setItem('role', inferred);
+        }
+      }
+
+      // 登录成功后，获取个人资料
       await fetchUserProfile();
 
       return { success: true };
@@ -127,6 +191,12 @@ export const useUserStore = defineStore('user', () => {
       token.value = savedToken;
       api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
       isLoggedIn.value = true;
+      // 尝试从 JWT 推断角色，优先于后端资料
+      const inferred = extractRoleFromToken(savedToken);
+      if (inferred) {
+        role.value = inferred;
+        localStorage.setItem('role', inferred);
+      }
       // **修改**: 应用启动时，也调用 fetchUserProfile
       await fetchUserProfile();
     }

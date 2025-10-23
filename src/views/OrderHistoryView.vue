@@ -1,5 +1,5 @@
- <!-- src/views/OrderHistoryView.vue -->
- <template>
+<!-- src/views/OrderHistoryView.vue -->
+<template>
    <div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
      <div class="max-w-6xl mx-auto p-4 sm:p-6">
        <!-- Back Button -->
@@ -99,8 +99,8 @@
                      <p class="text-sm text-gray-500">Total Price</p>
                      <p class="text-3xl font-bold text-green-600">${{ (order.totalPrice || 0).toFixed(2) }}</p>
                    </div>
-                 </div>
-               </div>
+          </div>
+            </div>
 
                <!-- Action Button -->
                <div class="flex justify-end">
@@ -111,8 +111,8 @@
                      View Details
                    </span>
                  </button>
-               </div>
-             </div>
+            </div>
+          </div>
            </div>
 
            <!-- Pagination Controls (Optional) -->
@@ -121,43 +121,43 @@
              Pagination Controls Here...
            </div>
            -->
-         </div>
-       </div>
-     </div>
-   </div>
- </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
- <script setup>
+<script setup>
  import { onMounted } from 'vue';
  import { useOrderStore } from '@/stores/order'; // Import the new store
 
  // --- Use the new Store ---
  const orderStore = useOrderStore();
 
- // --- METHODS ---
- const loadOrders = async () => {
+// --- METHODS ---
+const loadOrders = async () => {
    // Call the action from the store
    await orderStore.fetchOrders();
- };
+};
 
- const formatDate = (dateString) => {
-   if (!dateString) return 'N/A';
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
    try {
        const date = new Date(dateString);
        if (isNaN(date)) return 'Invalid Date';
        // Use en-US locale for English formatting
        return date.toLocaleDateString('en-US', {
-         year: 'numeric',
-         month: 'long',
-         day: 'numeric',
-       });
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
    } catch (e) {
        console.error("Error formatting date:", dateString, e);
        return 'Invalid Date';
    }
- };
+};
 
- const getStatusClass = (status) => {
+const getStatusClass = (status) => {
    if (!status) return 'status-pending'; // Default
    const lowerStatus = status.toLowerCase();
    if (lowerStatus === 'completed') return 'status-completed';
@@ -168,7 +168,7 @@
 
  const formatStatus = (status) => {
      if (!status) return 'Pending';
-     const lowerStatus = status.toLowerCase();
+  const lowerStatus = status.toLowerCase();
      switch (lowerStatus) {
          // Return English status labels
          case 'completed': return 'Completed';
@@ -180,14 +180,14 @@
  };
 
 
- // --- LIFECYCLE ---
- onMounted(() => {
+// --- LIFECYCLE ---
+onMounted(() => {
    // Call the store action when component mounts
-   loadOrders();
- });
- </script>
+  loadOrders();
+});
+</script>
 
- <style scoped>
+<style scoped>
  /* Status badge styles */
  .status-completed { background-color: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; } /* Green */
  .status-paid { background-color: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; } /* Light Blue */
@@ -315,6 +315,6 @@
    to {
      transform: rotate(360deg);
    }
- }
- </style>
+}
+</style>
 

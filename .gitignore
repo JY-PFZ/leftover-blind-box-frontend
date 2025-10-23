@@ -28,3 +28,9 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+node_modules/
+dist/
+.env*
+node_modules/
+dist/
+.env*

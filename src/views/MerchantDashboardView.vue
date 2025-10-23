@@ -37,17 +37,17 @@ const router = useRouter()
 // These functions are placeholders for future navigation
 const goToOrderManagement = () => {
   console.log('Navigating to Order Management...')
-  // router.push('/merchant/orders') 
+  router.push('/merchant/orders')
 }
 
 const goToProductManagement = () => {
   console.log('Navigating to Product Management...')
-  // router.push('/merchant/products')
+  router.push('/merchant/products')
 }
 
 const goToProfileManagement = () => {
   console.log('Navigating to Store Profile...')
-  // router.push('/merchant/profile')
+  router.push('/merchant/profile')
 }
 </script>
 
