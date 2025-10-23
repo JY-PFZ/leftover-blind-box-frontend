@@ -8,6 +8,7 @@ const OrderListView = () => import('@/views/OrderListView.vue')
 const CartView = () => import('@/views/CartView.vue')
 const MerchantView = () => import('@/views/MerchantView.vue')
 const MerchantDashboardView = () => import('@/views/MerchantDashboardView.vue')
+const ProductManagementView = () => import('@/views/ProductManagementView.vue')
 const AdminView = () => import('@/views/AdminView.vue')
 
 const router = createRouter({
