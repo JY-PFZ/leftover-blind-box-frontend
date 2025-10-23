@@ -38,11 +38,12 @@ export const productService = {
     }
   },
 
-  // 添加商品（使用真实API）
+  // 添加商品（使用商家API）
   async addProduct(productData) {
     try {
       console.log('🔄 调用添加商品API:', productData)
-      const response = await api.post('/magic-bags', productData)
+      // 尝试商家专用API
+      const response = await api.post('/merchant/magic-bags', productData)
       console.log('✅ 添加商品成功:', response.data)
       return {
         success: true,
@@ -57,11 +58,12 @@ export const productService = {
     }
   },
 
-  // 更新商品（使用真实API）
+  // 更新商品（使用商家API）
   async updateProduct(productId, productData) {
     try {
       console.log('🔄 调用更新商品API:', { productId, productData })
-      const response = await api.put(`/magic-bags/${productId}`, productData)
+      // 尝试商家专用API
+      const response = await api.put(`/merchant/magic-bags/${productId}`, productData)
       console.log('✅ 更新商品成功:', response.data)
       return {
         success: true,
@@ -76,11 +78,12 @@ export const productService = {
     }
   },
 
-  // 删除商品（使用真实API）
+  // 删除商品（使用商家API）
   async deleteProduct(productId) {
     try {
       console.log('🔄 调用删除商品API:', productId)
-      const response = await api.delete(`/magic-bags/${productId}`)
+      // 尝试商家专用API
+      const response = await api.delete(`/merchant/magic-bags/${productId}`)
       console.log('✅ 删除商品成功:', response.data)
       return {
         success: true,
@@ -95,11 +98,12 @@ export const productService = {
     }
   },
 
-  // 更新商品价格（使用真实API）
+  // 更新商品价格（使用商家API）
   async updateProductPrice(productId, price) {
     try {
       console.log('🔄 调用更新商品价格API:', { productId, price })
-      const response = await api.put(`/magic-bags/${productId}`, { price })
+      // 尝试商家专用API
+      const response = await api.put(`/merchant/magic-bags/${productId}`, { price })
       console.log('✅ 更新商品价格成功:', response.data)
       return {
         success: true,
@@ -114,12 +118,13 @@ export const productService = {
     }
   },
 
-  // 切换商品售罄状态（使用真实API）
+  // 切换商品售罄状态（使用商家API）
   async toggleProductSoldOut(productId, soldOut) {
     try {
       console.log('🔄 调用切换商品售罄状态API:', { productId, soldOut })
       // 使用isActive字段来控制商品是否可用
-      const response = await api.put(`/magic-bags/${productId}`, { isActive: !soldOut })
+      // 尝试商家专用API
+      const response = await api.put(`/merchant/magic-bags/${productId}`, { isActive: !soldOut })
       console.log('✅ 切换商品售罄状态成功:', response.data)
       return {
         success: true,
