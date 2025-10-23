@@ -7,6 +7,7 @@ const OrderHistoryView = () => import('@/views/OrderHistoryView.vue')
 const CartView = () => import('@/views/CartView.vue')
 const MerchantView = () => import('@/views/MerchantView.vue')
 const MerchantDashboardView = () => import('@/views/MerchantDashboardView.vue')
+const AdminView = () => import('@/views/AdminView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,11 @@ const router = createRouter({
       name: 'merchant-dashboard', 
       component: MerchantDashboardView, 
       meta: { requiresAuth: true, requiresRole: 'merchant' }
+    },
+    { 
+      path: '/admin', 
+      name: 'admin', 
+      component: AdminView
     }
   ]
 })
