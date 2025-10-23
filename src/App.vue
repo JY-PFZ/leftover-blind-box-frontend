@@ -1,21 +1,37 @@
 <template>
   <div id="app">
-    <!-- 商家导航栏 -->
-    <nav v-if="user.role === 'merchant'" class="navbar">
-      <div class="logo">Sugar Rush</div>
+    <!-- 管理员导航栏 -->
+    <nav v-if="user.role === 'admin' || user.role === 'super_admin'" class="navbar admin-nav">
+      <div class="logo">Sugar Rush Admin</div>
+      <ul class="nav-links">
+        <li><RouterLink to="/admin">管理员控制台</RouterLink></li>
+        <li><RouterLink to="/">返回首页</RouterLink></li>
+      </ul>
+      <div class="actions">
+        <div class="user-info">
+          <span class="admin-badge">Admin</span>
+          <span class="username">👤 {{ user.username }}</span>
+        </div>
+        <button @click="handleLogout" class="logout-btn">Logout</button>
+      </div>
+    </nav>
+
+    <!-- 商家导航栏 -->
+    <nav v-else-if="user.role === 'merchant'" class="navbar">
+      <div class="logo">Sugar Rush</div>
       <ul class="nav-links">
         <li><RouterLink to="/merchant/dashboard">Dashboard</RouterLink></li>
         <li><RouterLink to="/merchant/products">商品管理</RouterLink></li>
         <li><RouterLink to="/orders">订单管理</RouterLink></li>
       </ul>
-      <div class="actions">
-        <div class="user-info">
-          <span class="merchant-badge">Merchant</span>
-          <span class="username">👤 {{ user.username }}</span>
-        </div>
-        <button @click="handleLogout" class="logout-btn">Logout</button>
-      </div>
-    </nav>
+      <div class="actions">
+        <div class="user-info">
+          <span class="merchant-badge">Merchant</span>
+          <span class="username">👤 {{ user.username }}</span>
+        </div>
+        <button @click="handleLogout" class="logout-btn">Logout</button>
+      </div>
+    </nav>
 
     <!-- 顾客/访客导航栏 -->
     <nav v-else class="navbar">
@@ -144,6 +160,13 @@ body { font-family: 'Arial', sans-serif; background: #fdf2e9; }
 .user-info { display: flex; align-items: center; padding: 8px 12px; background: #e8f5e8; border-radius: 6px; border: 1px solid #28a745; }
 .username { color: #155724; font-weight: 500; font-size: 14px; }
 .merchant-badge { background: #007bff; color: white; padding: 2px 6px; font-size: 12px; border-radius: 4px; margin-right: 8px; }
+.admin-badge { background: #dc3545; color: white; padding: 2px 6px; font-size: 12px; border-radius: 4px; margin-right: 8px; }
+.admin-nav { background: linear-gradient(135deg, #dc3545, #c82333); }
+.admin-nav .logo { color: white; }
+.admin-nav .nav-links a { color: white; }
+.admin-nav .nav-links a:hover { color: #f8f9fa; }
+.admin-nav .user-info { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); }
+.admin-nav .username { color: white; }
 .logout-btn { background: #dc3545; color: white; }
 .cart-btn { background: #f39c12; color: white; position: relative; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; white-space: nowrap; }
 .cart-badge { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; }

@@ -8,7 +8,7 @@ const OrderListView = () => import('@/views/OrderListView.vue')
 const CartView = () => import('@/views/CartView.vue')
 const MerchantView = () => import('@/views/MerchantView.vue')
 const MerchantDashboardView = () => import('@/views/MerchantDashboardView.vue')
-const ProductManagementView = () => import('@/views/ProductManagementView.vue')
+const AdminView = () => import('@/views/AdminView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +30,12 @@ const router = createRouter({
       name: 'merchant-products', 
       component: ProductManagementView, 
       meta: { requiresAuth: true, requiresRole: 'merchant' }
+    },
+    { 
+      path: '/admin', 
+      name: 'admin', 
+      component: AdminView, 
+      meta: { requiresAuth: true, requiresRole: 'admin' }
     }
   ]
 })
