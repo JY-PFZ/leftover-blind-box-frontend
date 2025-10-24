@@ -25,7 +25,7 @@ export const useUserStore = defineStore('user', () => {
     }
     console.log("[UserStore] Attempting to fetch user profile...");
     try {
-      const response = await api.get('/user');
+      const response = await api.get('/api/user');
       console.log("[UserStore] Full response data:", response.data);
       console.log("[UserStore] response.data.data:", response.data?.data);
       const profile = response.data?.data; 
@@ -67,7 +67,7 @@ export const useUserStore = defineStore('user', () => {
   const updateUserProfile = async (profileData) => {
     if (!isLoggedIn.value) return { success: false, message: "Not logged in." };
     try {
-      await api.put('/user/profile', profileData);
+      await api.put('/api/user/profile', profileData);
       await fetchUserProfile(); // 更新后重新获取
       return { success: true };
     } catch (error) {
@@ -98,7 +98,7 @@ export const useUserStore = defineStore('user', () => {
   
   const login = async (usernameInput, password) => {
     try {
-      const response = await api.post('/auth/login', {
+      const response = await api.post('/api/auth/login', {
         username: usernameInput,
         password: password
       });

@@ -38,7 +38,7 @@ export const useCartStore = defineStore('cart', () => {
 
     isLoading.value = true;
     try {
-      const response = await api.get(`/cart/${userId}`);
+      const response = await api.get(`/api/cart/${userId}`);
       // 假设后端API直接返回CartDto对象, 或者在data字段里
       const cartData = response.data.data || response.data;
       _updateCartState(cartData);
@@ -67,7 +67,7 @@ export const useCartStore = defineStore('cart', () => {
 
     isLoading.value = true;
     try {
-      const response = await api.post(`/cart/${userId}/items`, null, {
+      const response = await api.post(`/api/cart/${userId}/items`, null, {
         params: { magicbagId, quantity }
       });
       const cartData = response.data.data || response.data;
@@ -91,7 +91,7 @@ export const useCartStore = defineStore('cart', () => {
 
     isLoading.value = true;
     try {
-      const response = await api.put(`/cart/${userId}/items/${magicbagId}`, null, {
+      const response = await api.put(`/api/cart/${userId}/items/${magicbagId}`, null, {
         params: { quantity }
       });
       const cartData = response.data.data || response.data;
@@ -111,7 +111,7 @@ export const useCartStore = defineStore('cart', () => {
 
     isLoading.value = true;
     try {
-      const response = await api.delete(`/cart/${userId}/items/${magicbagId}`);
+      const response = await api.delete(`/api/cart/${userId}/items/${magicbagId}`);
       const cartData = response.data.data || response.data;
       _updateCartState(cartData);
     } catch (error) {
@@ -128,7 +128,7 @@ export const useCartStore = defineStore('cart', () => {
 
     isLoading.value = true;
     try {
-      const response = await api.delete(`/cart/${userId}/items`);
+      const response = await api.delete(`/api/cart/${userId}/items`);
       const cartData = response.data.data || response.data;
       _updateCartState(cartData);
     } catch (error) {

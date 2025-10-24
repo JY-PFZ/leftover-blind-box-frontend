@@ -29,7 +29,7 @@ export const useMerchantStore = defineStore('merchant', () => {
     try {
       // 假设后端提供了 GET /api/merchants/my 接口
       // 这个接口应该在后端根据 token 识别用户，并返回对应的 Merchant DTO
-      const response = await api.get('/merchants/my'); 
+      const response = await api.get('/api/merchants/my'); 
       if (response.data?.code === 20000 && response.data?.data) {
         currentMerchant.value = response.data.data;
         console.log("[MerchantStore] Fetched merchant profile:", currentMerchant.value);
