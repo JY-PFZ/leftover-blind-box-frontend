@@ -153,6 +153,9 @@ export const useUserStore = defineStore('user', () => {
       
       token.value = receivedToken;
       localStorage.setItem('token', receivedToken);
+      // 立即保存用户名到localStorage，供fetchUserProfile使用
+      username.value = usernameInput;
+      localStorage.setItem('username', usernameInput);
       // api.defaults.headers.common['Authorization'] = `Bearer ${receivedToken}`; // 拦截器会做
 
       console.log("[UserStore] Login successful, token acquired.");
@@ -196,7 +199,8 @@ export const useUserStore = defineStore('user', () => {
                 role.value = assignedRole;
                 localStorage.setItem('role', assignedRole);
                 // 创建基础 profile，包含必要的 id 字段
-                const userId = decodedToken.userId || decodedToken.id || decodedToken.sub; // 尝试从JWT获取ID
+                // JWT中没有数字ID，使用临时数字ID
+                const userId = 999; // 使用临时数字ID
                 userProfile.value = { 
                     id: userId, 
                     username: username.value, 
@@ -215,9 +219,9 @@ export const useUserStore = defineStore('user', () => {
             // 维持默认角色 'customer' 或根据用户名猜测 (不推荐)
             role.value = 'customer'; 
             localStorage.setItem('role', 'customer');
-            // 使用用户名作为临时ID（因为后端 /api/user 返回 null）
+            // 使用临时数字ID（因为后端 /api/user 返回 null）
             userProfile.value = { 
-                id: username.value, // 临时使用用户名作为ID
+                id: 999, // 使用临时数字ID
                 username: username.value, 
                 role: 'CUSTOMER' 
             }; 
