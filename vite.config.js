@@ -9,8 +9,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        // 🔧 连接到本地后端（用于开发测试）
-        target: 'http://localhost:10015', 
+        // 🔧 连接到微服务后端
+        target: 'http://13.215.158.65:10016', 
         changeOrigin: true,
         // (可选) 如果后端API路径不包含/api，可能需要路径重写
         // rewrite: (path) => path.replace(/^\/api/, '') 
