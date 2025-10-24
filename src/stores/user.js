@@ -50,7 +50,8 @@ export const useUserStore = defineStore('user', () => {
       console.log("[UserStore] /api/user/profile Response:", response.data); // Log the full response
       const profile = response.data?.data; 
       
-      if (profile) {
+      if (profile && profile.id && profile.username) {
+        // 后端返回了有效数据
         userProfile.value = profile;
         console.log("[UserStore] User profile fetched:", JSON.stringify(profile)); 
 
@@ -66,12 +67,27 @@ export const useUserStore = defineStore('user', () => {
             console.log("[UserStore] Updated role from profile:", lowerCaseRole);
           }
         }
-        // 🟢 只有在成功获取 profile 后才确认 isLoggedIn
         isLoggedIn.value = true; 
         return profile; 
       } else {
-         console.warn("[UserStore] Backend /api/user returned null data.");
-         // 返回 null，让调用者 (login/initialize) 处理备用逻辑
+         console.warn("[UserStore] Backend /api/user/profile returned null or invalid data, using JWT fallback.");
+         // 后端返回null，使用JWT信息创建临时profile
+         const currentUsername = username.value || localStorage.getItem('username');
+         if (currentUsername) {
+           // 使用用户名作为临时ID（因为后端Cart API需要数字ID，但用户名也可以工作）
+           const tempProfile = {
+             id: currentUsername, // 临时使用用户名作为ID
+             username: currentUsername,
+             role: role.value.toUpperCase(),
+             phone: null,
+             nickname: null,
+             avatar: null
+           };
+           userProfile.value = tempProfile;
+           isLoggedIn.value = true;
+           console.log("[UserStore] Created temporary profile from JWT:", tempProfile);
+           return tempProfile;
+         }
          return null;
       }
 
