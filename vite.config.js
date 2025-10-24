@@ -12,18 +12,26 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // 统一以 /api 开头发起请求
-      '/api': {
-        target: 'http://13.215.158.65:10016',   // 你的后端网关/微服务入口
+      // Product 服务直连（因为 Gateway 没有配置 product 路由）
+      '/api/product': {
+        target: 'http://13.215.158.65:10019',   // Product 服务直连
         changeOrigin: true,
         secure: false,
-        // Gateway 配置的路由是 /api/product、/api/auth、/api/user 等
-        // 保留 /api 前缀，直接转发到后端
-        // rewrite: (path) => path.replace(/^\/api/, ''),
-        // 可选：看见代理日志（排查超好用）
+        rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            console.log('[proxy] ->', req.method, proxyReq.getHeader('host'), req.url)
+            console.log('[proxy product] ->', req.method, proxyReq.getHeader('host'), req.url)
+          })
+        }
+      },
+      // 其他服务通过 Gateway
+      '/api': {
+        target: 'http://13.215.158.65:10016',   // Gateway
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('[proxy gateway] ->', req.method, proxyReq.getHeader('host'), req.url)
           })
         }
       },
