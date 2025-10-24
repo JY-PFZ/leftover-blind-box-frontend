@@ -23,4 +23,19 @@ api.interceptors.request.use(
   }
 );
 
+// 设置响应拦截器，处理 401 未授权错误
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // 401 未授权，清除 token 并跳转到登录页
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      // 可以在这里添加跳转到登录页的逻辑
+    }
+    return Promise.reject(error);
+  }
+);
+
 export { api };

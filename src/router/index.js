@@ -62,6 +62,18 @@ const routes = [
     component: () => import('@/views/AdminDashboardView.vue'),
     meta: { requiresAuth: true, roles: ['admin'] } // 🔧 需要管理员角色
   },
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('@/views/AdminLoginView.vue'),
+    // 🔧 不需要认证，可以直接访问
+  },
+  {
+    path: '/admin/register',
+    name: 'AdminRegister',
+    component: () => import('@/views/AdminRegisterView.vue'),
+    // 🔧 不需要认证，可以直接访问
+  },
   
   // 商家路由嵌套结构
   {

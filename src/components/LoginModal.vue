@@ -63,9 +63,13 @@ const onSubmit = async () => {
     
     setTimeout(() => {
       emit('close');
+      // 根据角色跳转到不同界面
       if (userStore.role === 'merchant') {
         router.push('/merchant/dashboard');
+      } else if (userStore.role === 'admin') {
+        router.push('/admin');
       }
+      // customer 和其他角色留在当前页面
     }, 1000);
   } else {
     errorMsg.value = res.message || 'Login failed';

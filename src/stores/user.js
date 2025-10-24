@@ -84,7 +84,8 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn.value = false;
     isInitialized.value = false; // 重置初始化，下次需要重新初始化
     localStorage.clear();
-    delete api.defaults.headers.common['Authorization'];
+    // 注意：不需要手动删除 api.defaults.headers.common['Authorization']
+    // 因为拦截器会自动检查 localStorage，如果 token 不存在就不会添加 Authorization header
     console.log("[UserStore] Logout complete.");
     // 🟢 根据参数决定是否跳转
     // if (shouldRedirect && router) { // 确保 router 实例可用
@@ -124,7 +125,8 @@ export const useUserStore = defineStore('user', () => {
       
       token.value = receivedToken;
       localStorage.setItem('token', receivedToken);
-      api.defaults.headers.common['Authorization'] = `Bearer ${receivedToken}`;
+      // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
+      // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
       console.log("[UserStore] Login successful, token set.");
 
       // 登录成功后，获取 profile 并更新状态
@@ -152,7 +154,8 @@ export const useUserStore = defineStore('user', () => {
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
       token.value = savedToken;
-      api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+      // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
+      // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
       console.log("[UserStore] Found token in localStorage, attempting to fetch profile.");
       // 尝试获取 profile 来验证 token 并设置登录状态
       await fetchUserProfile(); // fetchUserProfile 内部会设置 isLoggedIn
