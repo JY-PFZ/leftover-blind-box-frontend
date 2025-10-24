@@ -12,8 +12,8 @@ export default defineConfig({
         // 🔧 连接到微服务后端
         target: 'http://13.215.158.65:10016', 
         changeOrigin: true,
-        // (可选) 如果后端API路径不包含/api，可能需要路径重写
-        // rewrite: (path) => path.replace(/^\/api/, '') 
+        // 去掉 /api 前缀，因为后端微服务路径不包含 /api
+        rewrite: (path) => path.replace(/^\/api/, '') 
       }
     }
   },
