@@ -121,7 +121,7 @@ const fetchProducts = async () => {
   isLoading.value = true;
   error.value = null;
   try {
-    const response = await api.get('/magic-bags', { params: { page: 1, size: 999 } });
+    const response = await api.get('/product/magic-bags', { params: { page: 1, size: 999 } });
     console.log('[HomeView] Fetch products response:', response.data);
     products.value = response.data.data.magicBags || [];
   } catch (err) {

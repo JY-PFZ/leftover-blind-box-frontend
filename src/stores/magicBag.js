@@ -37,8 +37,8 @@ export const useMagicBagStore = defineStore('magicBag', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      // 调用 GET /api/magic-bags/merchant/{merchantId}
-      const response = await api.get(`/magic-bags/merchant/${currentMerchantId}`);
+      // 调用 GET /api/product/magic-bags/merchant/{merchantId}
+      const response = await api.get(`/product/magic-bags/merchant/${currentMerchantId}`);
       if (response.data?.code === 20000 && Array.isArray(response.data?.data)) {
         magicBags.value = response.data.data;
         console.log(`[MagicBagStore] Fetched ${magicBags.value.length} magic bags for merchant ${currentMerchantId}`);
@@ -71,8 +71,8 @@ export const useMagicBagStore = defineStore('magicBag', () => {
     isLoading.value = true; // 可以为创建操作设置单独的 loading 状态
     error.value = null;
     try {
-      // 调用 POST /api/magic-bags
-      const response = await api.post('/magic-bags', dataToSubmit);
+      // 调用 POST /api/product/magic-bags
+      const response = await api.post('/product/magic-bags', dataToSubmit);
       if (response.data?.code === 20000 && response.data?.data) {
         console.log("[MagicBagStore] Magic Bag created successfully:", response.data.data);
         // 创建成功后，重新获取列表以显示新项
@@ -95,8 +95,8 @@ export const useMagicBagStore = defineStore('magicBag', () => {
     isLoading.value = true; // 可以为更新操作设置单独的 loading 状态
     error.value = null;
      try {
-      // 调用 PUT /api/magic-bags/{id}
-      const response = await api.put(`/magic-bags/${bagId}`, bagData);
+      // 调用 PUT /api/product/magic-bags/{id}
+      const response = await api.put(`/product/magic-bags/${bagId}`, bagData);
       if (response.data?.code === 20000 && response.data?.data) {
         console.log(`[MagicBagStore] Magic Bag ${bagId} updated successfully:`, response.data.data);
         // 更新成功后，重新获取列表以显示更改
@@ -119,8 +119,8 @@ export const useMagicBagStore = defineStore('magicBag', () => {
     isLoading.value = true; // 可以为删除操作设置单独的 loading 状态
     error.value = null;
      try {
-      // 调用 DELETE /api/magic-bags/{id}
-      const response = await api.delete(`/magic-bags/${bagId}`);
+      // 调用 DELETE /api/product/magic-bags/{id}
+      const response = await api.delete(`/product/magic-bags/${bagId}`);
       // 检查后端是否成功 (通常 DELETE 成功返回 200 或 204)
        if (response.status === 200 || response.status === 204 || response.data?.code === 20000) {
         console.log(`[MagicBagStore] Magic Bag ${bagId} deleted successfully.`);
