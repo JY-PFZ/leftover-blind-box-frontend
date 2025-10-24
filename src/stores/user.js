@@ -26,6 +26,8 @@ export const useUserStore = defineStore('user', () => {
     console.log("[UserStore] Attempting to fetch user profile...");
     try {
       const response = await api.get('/user');
+      console.log("[UserStore] Full response data:", response.data);
+      console.log("[UserStore] response.data.data:", response.data?.data);
       const profile = response.data?.data; 
       
       if (profile) {
