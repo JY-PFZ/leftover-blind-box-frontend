@@ -49,6 +49,7 @@ export const useUserStore = defineStore('user', () => {
       const response = await api.get(`/api/user/profile/${currentUsername}`); 
       console.log("[UserStore] /api/user/profile Response:", response.data); // Log the full response
       console.log("[UserStore] Response.data.data:", response.data?.data); // Log the actual data object
+      console.log("[UserStore] Response.data.data keys:", response.data?.data ? Object.keys(response.data.data) : 'null');
       const profile = response.data?.data; 
       
       if (profile && profile.username) {
