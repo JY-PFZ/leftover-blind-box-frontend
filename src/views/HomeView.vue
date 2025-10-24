@@ -122,8 +122,11 @@ const fetchProducts = async () => {
   error.value = null;
   try {
     const response = await api.get('/magic-bags', { params: { page: 1, size: 999 } });
+    console.log('[HomeView] Fetch products response:', response.data);
     products.value = response.data.data.magicBags || [];
   } catch (err) {
+    console.error('[HomeView] Error fetching products:', err);
+    console.error('[HomeView] Error response:', err.response?.data);
     error.value = err.message || 'An unknown error occurred';
   } finally {
     isLoading.value = false;

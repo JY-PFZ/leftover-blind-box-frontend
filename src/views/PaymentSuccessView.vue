@@ -115,3 +115,4 @@ const goToHome = () => {
 /* Styles are handled by Tailwind classes */
 </style>
 
+

@@ -102,3 +102,4 @@ stripe:
 - `OrderHistoryView.vue`：添加了 Stripe 支付流程
 - 按钮文本：从 "Confirm Payment" 改为调用 Stripe API
 
+

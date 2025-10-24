@@ -23,3 +23,4 @@ SELECT * FROM merchants LIMIT 5;
 
 然后我会告诉你需要插入什么样的记录。
 
+

@@ -26,3 +26,4 @@ DESCRIBE users;
 2. 如果存在，它有什么字段
 3. users 表的结构是怎样的
 
+

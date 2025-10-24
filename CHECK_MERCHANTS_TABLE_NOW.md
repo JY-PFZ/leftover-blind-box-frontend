@@ -21,3 +21,4 @@ SELECT * FROM merchants WHERE user_id = 19;
 
 只有 `users` 表有记录是不够的，`merchants` 表也必须要有对应的记录。
 
+

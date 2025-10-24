@@ -47,3 +47,4 @@ SELECT * FROM merchants WHERE user_id = 19;
 1. 刷新浏览器页面（http://localhost:5173）
 2. 应该就能正常看到商家界面了
 
+

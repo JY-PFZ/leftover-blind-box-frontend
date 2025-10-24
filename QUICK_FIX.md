@@ -66,3 +66,4 @@ SELECT * FROM merchants WHERE user_id = 19;
 - 确保 `status` 字段设置为 `'approved'`，否则某些功能可能受限
 - 前端现在运行在端口 5174（不是 5173）
 
+

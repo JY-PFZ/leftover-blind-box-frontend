@@ -20,3 +20,4 @@ SELECT * FROM merchants LIMIT 3;
 
 然后把结果发给我，我帮你创建正确的 INSERT 语句。
 
+

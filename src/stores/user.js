@@ -149,6 +149,7 @@ export const useUserStore = defineStore('user', () => {
         role.value = 'customer';
         localStorage.setItem('role', 'customer');
         isLoggedIn.value = true;
+        isInitialized.value = true; // 标记初始化完成
         return tempProfile;
       }
       isInitialized.value = true; // 登录成功也意味着初始化完成
