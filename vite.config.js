@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        // 将目标地址修改为你本地的后端服务
+        // 🔧 连接到本地后端（用于开发测试）
         target: 'http://localhost:10015', 
         changeOrigin: true,
         // (可选) 如果后端API路径不包含/api，可能需要路径重写
