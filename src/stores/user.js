@@ -172,9 +172,14 @@ export const useUserStore = defineStore('user', () => {
                 }
                 role.value = assignedRole;
                 localStorage.setItem('role', assignedRole);
-                // 创建基础 profile
-                userProfile.value = { username: username.value, role: role.value.toUpperCase() }; 
-                console.log(`[UserStore] Using info from decoded JWT: User=${username.value}, Role=${role.value}`);
+                // 创建基础 profile，包含必要的 id 字段
+                const userId = decodedToken.userId || decodedToken.id || decodedToken.sub; // 尝试从JWT获取ID
+                userProfile.value = { 
+                    id: userId, 
+                    username: username.value, 
+                    role: role.value.toUpperCase() 
+                }; 
+                console.log(`[UserStore] Using info from decoded JWT: User=${username.value}, Role=${role.value}, ID=${userId}`);
                 foundInfoInToken = true;
             }
         }
@@ -187,7 +192,12 @@ export const useUserStore = defineStore('user', () => {
             // 维持默认角色 'customer' 或根据用户名猜测 (不推荐)
             role.value = 'customer'; 
             localStorage.setItem('role', 'customer');
-            userProfile.value = { username: username.value, role: 'CUSTOMER' }; 
+            // 使用用户名作为临时ID（因为后端 /api/user 返回 null）
+            userProfile.value = { 
+                id: username.value, // 临时使用用户名作为ID
+                username: username.value, 
+                role: 'CUSTOMER' 
+            }; 
         }
       }
 
@@ -234,8 +244,13 @@ export const useUserStore = defineStore('user', () => {
                 }
                 role.value = assignedRole;
                 localStorage.setItem('role', assignedRole);
-                userProfile.value = { username: username.value, role: role.value.toUpperCase() };
-                console.log(`[UserStore] Using info from decoded JWT during init: User=${username.value}, Role=${role.value}`);
+                const userId = decodedToken.userId || decodedToken.id || decodedToken.sub;
+                userProfile.value = { 
+                    id: userId, 
+                    username: username.value, 
+                    role: role.value.toUpperCase() 
+                };
+                console.log(`[UserStore] Using info from decoded JWT during init: User=${username.value}, Role=${role.value}, ID=${userId}`);
                 foundInfoInToken = true;
             }
         }
@@ -244,7 +259,11 @@ export const useUserStore = defineStore('user', () => {
             console.log("[UserStore] JWT decode failed during init, using localStorage fallback.");
             username.value = localStorage.getItem('username') || '';
             role.value = localStorage.getItem('role') || 'customer';
-             userProfile.value = { username: username.value, role: role.value.toUpperCase() };
+            userProfile.value = { 
+                id: username.value, // 临时使用用户名作为ID
+                username: username.value, 
+                role: role.value.toUpperCase() 
+            };
         }
       }
       // 如果 profile 获取成功，fetchUserProfile 内部已经设置了 isLoggedIn
