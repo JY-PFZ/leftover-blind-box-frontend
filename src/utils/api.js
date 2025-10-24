@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // 创建一个 axios 实例，用于与后端 API 通信
 const api = axios.create({
-  // 确保 baseURL 指向你正在运行的后端服务的正确端口
-  baseURL: 'http://localhost:10015/api', 
+  // 🔧 使用相对路径，让 Vite 代理转发，避免 CORS 问题
+  baseURL: '/api', 
   timeout: 10000, // 请求超时时间
 });
 
