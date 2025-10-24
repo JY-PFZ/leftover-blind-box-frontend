@@ -74,9 +74,9 @@ export const useUserStore = defineStore('user', () => {
          // 后端返回null，使用JWT信息创建临时profile
          const currentUsername = username.value || localStorage.getItem('username');
          if (currentUsername) {
-           // 使用用户名作为临时ID（因为后端Cart API需要数字ID，但用户名也可以工作）
+           // 使用临时数字ID（因为后端Cart API需要Integer类型）
            const tempProfile = {
-             id: currentUsername, // 临时使用用户名作为ID
+             id: 999, // 临时使用固定数字ID
              username: currentUsername,
              role: role.value.toUpperCase(),
              phone: null,
