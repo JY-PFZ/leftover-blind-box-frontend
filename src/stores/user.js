@@ -52,15 +52,13 @@ export const useUserStore = defineStore('user', () => {
       } else {
          console.warn("[UserStore] Fetched profile data is null or undefined.");
          console.warn("[UserStore] This is likely a backend issue - microservice /user endpoint returning null.");
-         // 🔧 临时修复：不让登录失败，让用户继续使用
-         // 但仍建议后端修复
-         await logout(false); // 获取失败也清理状态
+         // 🔧 临时修复：不调用logout，让调用者（login函数）处理
          return null;
       }
 
     } catch (error) {
       console.error("[UserStore] 获取用户资料失败:", error.response?.data || error.message);
-      await logout(false); // 获取失败清理状态
+      // 🔧 临时修复：不调用logout，让调用者（login函数）处理
       return null; // 返回 null 表示获取失败
       // throw error; // 或者重新抛出错误
     }
