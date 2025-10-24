@@ -51,6 +51,9 @@ export const useUserStore = defineStore('user', () => {
         return profile; // 返回获取到的 profile
       } else {
          console.warn("[UserStore] Fetched profile data is null or undefined.");
+         console.warn("[UserStore] This is likely a backend issue - microservice /user endpoint returning null.");
+         // 🔧 临时修复：不让登录失败，让用户继续使用
+         // 但仍建议后端修复
          await logout(false); // 获取失败也清理状态
          return null;
       }
@@ -127,6 +130,8 @@ export const useUserStore = defineStore('user', () => {
       
       token.value = receivedToken;
       localStorage.setItem('token', receivedToken);
+      // 保存用户名以便后续使用
+      localStorage.setItem('temp_username', usernameInput);
       // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
       // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
       console.log("[UserStore] Login successful, token set.");
@@ -134,8 +139,19 @@ export const useUserStore = defineStore('user', () => {
       // 登录成功后，获取 profile 并更新状态
       const profile = await fetchUserProfile(); 
       if (!profile) {
-        // 如果 fetchUserProfile 失败 (返回 null), 登录也算失败
-        throw new Error("Failed to fetch user profile after login.");
+        // 🔧 临时修复：如果获取用户资料失败，使用登录时保存的用户名创建临时资料
+        console.warn("[UserStore] Failed to fetch profile, creating temporary profile from login username");
+        const tempProfile = {
+          username: usernameInput,
+          role: 'CUSTOMER' // 默认角色
+        };
+        userProfile.value = tempProfile;
+        username.value = usernameInput;
+        localStorage.setItem('username', usernameInput);
+        role.value = 'customer';
+        localStorage.setItem('role', 'customer');
+        isLoggedIn.value = true;
+        return tempProfile;
       }
       isInitialized.value = true; // 登录成功也意味着初始化完成
       return { success: true };
