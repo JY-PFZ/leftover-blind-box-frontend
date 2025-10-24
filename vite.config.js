@@ -17,8 +17,9 @@ export default defineConfig({
         target: 'http://13.215.158.65:10016',   // 你的后端网关/微服务入口
         changeOrigin: true,
         secure: false,
-        // 保留 /api 前缀，直接转发到后端
-        // rewrite: (path) => path.replace(/^\/api/, ''),
+        // Gateway 配置的路由是 /product、/auth、/user 等，没有 /api 前缀
+        // 因此需要把 "/api" 前缀去掉
+        rewrite: (path) => path.replace(/^\/api/, ''),
         // 可选：看见代理日志（排查超好用）
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
