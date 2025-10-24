@@ -2,6 +2,22 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { api } from '@/utils/api';
 
+// --- 辅助函数：尝试解码 JWT ---
+function decodeJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null; // Invalid token format
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("[UserStore] Failed to decode JWT:", error);
+    return null;
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   // --- 状态 ---
   const token = ref(localStorage.getItem('token') || '');
@@ -9,30 +25,28 @@ export const useUserStore = defineStore('user', () => {
   const role = ref(localStorage.getItem('role') || 'customer'); 
   const userProfile = ref(null); 
   const isLoggedIn = ref(!!token.value);
-  // 🟢 使用 ref 跟踪初始化状态，并确保默认值为 false
   const isInitialized = ref(false); 
   const showLoginModal = ref(false); 
 
   // --- Actions ---
 
   const fetchUserProfile = async () => {
-    // 🟢 增加检查，如果 token 为空，直接返回 null 或抛出错误，避免无效请求
     if (!token.value) {
         console.warn("[UserStore] No token found, cannot fetch user profile.");
-        // 清理可能残留的状态
-        await logout(false); // 调用 logout 清理，但不重定向
-        return null; // 返回 null 表示获取失败
+        // If initialize calls this without token, ensure logged out state
+        if (isLoggedIn.value) await logout(false); 
+        return null; 
     }
     console.log("[UserStore] Attempting to fetch user profile...");
     try {
-      const response = await api.get('/api/user');
-      console.log("[UserStore] Full response data:", response.data);
-      console.log("[UserStore] response.data.data:", response.data?.data);
+      // 🟢 确保路径正确 (之前测试 /api/user 返回 null)
+      const response = await api.get('/api/user'); 
+      console.log("[UserStore] /api/user Response:", response.data); // Log the full response
       const profile = response.data?.data; 
       
       if (profile) {
         userProfile.value = profile;
-        console.log("[UserStore] User profile fetched:", JSON.stringify(profile)); // Log 内容
+        console.log("[UserStore] User profile fetched:", JSON.stringify(profile)); 
 
         if (profile.username) {
           username.value = profile.username;
@@ -40,35 +54,34 @@ export const useUserStore = defineStore('user', () => {
         }
         if (profile.role) {
           const lowerCaseRole = profile.role.toLowerCase();
-          // 🟢 只有在角色实际改变时才更新 localStorage
           if (role.value !== lowerCaseRole) {
             role.value = lowerCaseRole;
             localStorage.setItem('role', lowerCaseRole);
             console.log("[UserStore] Updated role from profile:", lowerCaseRole);
           }
         }
-        isLoggedIn.value = true; // 确认已登录
-        return profile; // 返回获取到的 profile
+        // 🟢 只有在成功获取 profile 后才确认 isLoggedIn
+        isLoggedIn.value = true; 
+        return profile; 
       } else {
-         console.warn("[UserStore] Fetched profile data is null or undefined.");
-         console.warn("[UserStore] This is likely a backend issue - microservice /user endpoint returning null.");
-         // 🔧 临时修复：不调用logout，让调用者（login函数）处理
+         console.warn("[UserStore] Backend /api/user returned null data.");
+         // 返回 null，让调用者 (login/initialize) 处理备用逻辑
          return null;
       }
 
     } catch (error) {
       console.error("[UserStore] 获取用户资料失败:", error.response?.data || error.message);
-      // 🔧 临时修复：不调用logout，让调用者（login函数）处理
-      return null; // 返回 null 表示获取失败
-      // throw error; // 或者重新抛出错误
+      // 发生错误也返回 null
+      return null; 
     }
   };
   
   const updateUserProfile = async (profileData) => {
+    // ... (保持不变) ...
     if (!isLoggedIn.value) return { success: false, message: "Not logged in." };
     try {
       await api.put('/api/user/profile', profileData);
-      await fetchUserProfile(); // 更新后重新获取
+      await fetchUserProfile(); 
       return { success: true };
     } catch (error) {
       console.error("[UserStore] 更新用户资料失败:", error);
@@ -77,7 +90,6 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
-  // 🟢 添加一个可选参数，决定是否在登出后重定向
   const logout = async (shouldRedirect = true) => { 
     console.log("[UserStore] Logging out...");
     token.value = '';
@@ -85,17 +97,16 @@ export const useUserStore = defineStore('user', () => {
     role.value = 'customer'; 
     userProfile.value = null; 
     isLoggedIn.value = false;
-    isInitialized.value = false; // 重置初始化，下次需要重新初始化
+    isInitialized.value = false; 
     localStorage.clear();
-    // 注意：不需要手动删除 api.defaults.headers.common['Authorization']
-    // 因为拦截器会自动检查 localStorage，如果 token 不存在就不会添加 Authorization header
+    // 拦截器会自动处理 Authorization header
     console.log("[UserStore] Logout complete.");
-    // 🟢 根据参数决定是否跳转
-    // if (shouldRedirect && router) { // 确保 router 实例可用
+    // if (shouldRedirect && router) { // router instance might not be available here
     //   router.push('/'); 
     // }
   };
   
+  // 🟢 修改 login 函数以处理 fetchUserProfile 失败的情况
   const login = async (usernameInput, password) => {
     try {
       const response = await api.post('/api/auth/login', {
@@ -104,82 +115,143 @@ export const useUserStore = defineStore('user', () => {
       });
 
       console.log('[Login Debug] Full response:', response);
-      console.log('[Login Debug] Response headers:', response.headers);
-      console.log('[Login Debug] Response data:', response.data);
-      console.log('[Login Debug] Checking for token in multiple locations...');
+      // 尝试从 header 获取 token
+      const receivedToken = response.headers?.['x-new-token'] || response.headers?.['X-New-Token'];
 
-      // 🔧 从多个位置提取 token
-      const receivedToken =
-        response.headers?.['x-new-token'] ||
-        response.headers?.['X-New-Token'] ||
-        response.headers?.['X-NEW-TOKEN'] ||
-        response.data?.data?.token ||
-        response.data?.token;
-
-      console.log('[Login Debug] Extracted token:', receivedToken ? 'Found' : 'Not found');
+      console.log('[Login Debug] Extracted token:', receivedToken ? 'Token Found' : 'Token Not found in headers');
 
       if (!receivedToken) {
-          console.error('[Login Debug] Token not found in:', {
-            headers: response.headers,
-            data: response.data
-          });
+          // 如果 header 没有，可以尝试从 body 获取 (根据后端实际情况调整)
+          // const tokenFromBody = response.data?.data?.token || response.data?.token;
+          // if(tokenFromBody) receivedToken = tokenFromBody; else ...
+          console.error('[Login Debug] Token not found in response headers or body.');
           throw new Error('Login response did not contain a token.');
       }
       
       token.value = receivedToken;
       localStorage.setItem('token', receivedToken);
-      // 保存用户名以便后续使用
-      localStorage.setItem('temp_username', usernameInput);
-      // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
-      // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
-      console.log("[UserStore] Login successful, token set.");
+      // api.defaults.headers.common['Authorization'] = `Bearer ${receivedToken}`; // 拦截器会做
 
-      // 登录成功后，获取 profile 并更新状态
+      console.log("[UserStore] Login successful, token acquired.");
+
+      // 尝试获取 profile
       const profile = await fetchUserProfile(); 
-      if (!profile) {
-        // 🔧 临时修复：如果获取用户资料失败，使用登录时保存的用户名创建临时资料
-        console.warn("[UserStore] Failed to fetch profile, creating temporary profile from login username");
-        const tempProfile = {
-          username: usernameInput,
-          role: 'CUSTOMER' // 默认角色
-        };
-        userProfile.value = tempProfile;
-        username.value = usernameInput;
-        localStorage.setItem('username', usernameInput);
-        role.value = 'customer';
-        localStorage.setItem('role', 'customer');
-        isLoggedIn.value = true;
-        isInitialized.value = true; // 标记初始化完成
-        return tempProfile;
+      
+      if (profile) {
+        // Profile 获取成功，fetchUserProfile 内部已更新状态
+        console.log("[UserStore] Profile fetched successfully after login.");
+        isLoggedIn.value = true; // 确保状态正确
+      } else {
+        // Profile 获取失败 (后端返回 null 或出错)，但我们有 token
+        console.warn("[UserStore] Profile fetch failed after login. Using JWT decode or defaults as fallback.");
+        isLoggedIn.value = true; // 关键：设置登录状态为 true
+
+        // 尝试解码 JWT 获取信息
+        const decodedToken = decodeJwt(receivedToken);
+        let foundInfoInToken = false;
+        if (decodedToken) {
+            console.log("[UserStore] Decoded JWT:", decodedToken);
+            // 假设 'sub' 是用户名/邮箱, 'roles' 或 'authorities' 是角色数组
+            const usernameFromToken = decodedToken.sub; 
+            // 检查常见的角色声明字段
+            const rolesFromToken = decodedToken.roles || decodedToken.authorities || (decodedToken.role ? [decodedToken.role] : []); 
+
+            if (usernameFromToken) {
+                username.value = usernameFromToken;
+                localStorage.setItem('username', usernameFromToken);
+                
+                // 根据 token 中的角色信息设置 role
+                let assignedRole = 'customer'; // 默认
+                if (Array.isArray(rolesFromToken) && rolesFromToken.length > 0) {
+                   // 检查是否包含商家或管理员角色 (忽略大小写和 ROLE_ 前缀)
+                   if (rolesFromToken.some(r => r.toUpperCase().includes('MERCHANT'))) {
+                       assignedRole = 'merchant';
+                   } else if (rolesFromToken.some(r => r.toUpperCase().includes('ADMIN'))) {
+                       assignedRole = 'admin'; // 如果有管理员角色
+                   } // 可以添加更多角色判断
+                }
+                role.value = assignedRole;
+                localStorage.setItem('role', assignedRole);
+                // 创建基础 profile
+                userProfile.value = { username: username.value, role: role.value.toUpperCase() }; 
+                console.log(`[UserStore] Using info from decoded JWT: User=${username.value}, Role=${role.value}`);
+                foundInfoInToken = true;
+            }
+        }
+
+        // 如果 JWT 解码失败或未包含足够信息，使用登录输入和默认值
+        if (!foundInfoInToken) {
+            console.log("[UserStore] JWT decode failed or no info found, using login input as fallback.");
+            username.value = usernameInput;
+            localStorage.setItem('username', usernameInput);
+            // 维持默认角色 'customer' 或根据用户名猜测 (不推荐)
+            role.value = 'customer'; 
+            localStorage.setItem('role', 'customer');
+            userProfile.value = { username: username.value, role: 'CUSTOMER' }; 
+        }
       }
-      isInitialized.value = true; // 登录成功也意味着初始化完成
-      return { success: true };
+
+      isInitialized.value = true; // 标记初始化完成
+      return { success: true }; // 核心修改：只要拿到 token 就返回成功
+
     } catch (error) {
       console.error('API 登录失败:', error.response?.data || error.message);
       const errorMessage = error.response?.data?.message || error.message || 'An unknown error occurred.';
-      await logout(false); // 登录失败清理状态，不重定向
+      await logout(false); 
       return { success: false, message: errorMessage };
     }
   };
   
   // 初始化函数
   const initialize = async () => {
-    // 🟢 改进初始化逻辑，确保只执行一次，并正确处理 token
     if (isInitialized.value) return;
     console.log("[UserStore] Initializing...");
 
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
       token.value = savedToken;
-      // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
-      // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
+      // api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`; // 拦截器会做
       console.log("[UserStore] Found token in localStorage, attempting to fetch profile.");
-      // 尝试获取 profile 来验证 token 并设置登录状态
-      await fetchUserProfile(); // fetchUserProfile 内部会设置 isLoggedIn
+      
+      const profile = await fetchUserProfile(); // 尝试获取 profile
+
+      if (!profile) {
+        // 如果获取 profile 失败，但 token 存在，尝试解码 token 获取信息
+        console.warn("[UserStore] Profile fetch failed during init. Using JWT decode or defaults as fallback.");
+        isLoggedIn.value = true; // 关键：设置登录状态为 true
+        const decodedToken = decodeJwt(savedToken);
+        let foundInfoInToken = false;
+        if (decodedToken) {
+            const usernameFromToken = decodedToken.sub;
+            const rolesFromToken = decodedToken.roles || decodedToken.authorities || (decodedToken.role ? [decodedToken.role] : []);
+            if (usernameFromToken) {
+                username.value = usernameFromToken;
+                localStorage.setItem('username', usernameFromToken);
+                let assignedRole = 'customer';
+                if (Array.isArray(rolesFromToken) && rolesFromToken.length > 0) {
+                   if (rolesFromToken.some(r => r.toUpperCase().includes('MERCHANT'))) assignedRole = 'merchant';
+                   else if (rolesFromToken.some(r => r.toUpperCase().includes('ADMIN'))) assignedRole = 'admin';
+                }
+                role.value = assignedRole;
+                localStorage.setItem('role', assignedRole);
+                userProfile.value = { username: username.value, role: role.value.toUpperCase() };
+                console.log(`[UserStore] Using info from decoded JWT during init: User=${username.value}, Role=${role.value}`);
+                foundInfoInToken = true;
+            }
+        }
+        // 如果解码失败，尝试使用 localStorage 中可能存在的旧 username/role
+        if (!foundInfoInToken) {
+            console.log("[UserStore] JWT decode failed during init, using localStorage fallback.");
+            username.value = localStorage.getItem('username') || '';
+            role.value = localStorage.getItem('role') || 'customer';
+             userProfile.value = { username: username.value, role: role.value.toUpperCase() };
+        }
+      }
+      // 如果 profile 获取成功，fetchUserProfile 内部已经设置了 isLoggedIn
+      
     } else {
-        console.log("[UserStore] No token found in localStorage.");
-        // 确保未登录状态被正确设置
-        await logout(false); 
+        console.log("[UserStore] No token found in localStorage during init.");
+        await logout(false); // 确保是登出状态
     }
     isInitialized.value = true; // 标记初始化完成
     console.log("[UserStore] Initialization complete. isLoggedIn:", isLoggedIn.value, "Role:", role.value);
@@ -201,4 +273,3 @@ export const useUserStore = defineStore('user', () => {
     fetchUserProfile 
   };
 });
-
