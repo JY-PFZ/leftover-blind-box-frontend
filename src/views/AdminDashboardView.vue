@@ -258,7 +258,7 @@ const handleLogout = async () => {
 // 获取任务列表
 const fetchTasks = async () => {
   try {
-    const response = await api.get('/admin/task');
+    const response = await api.get('/api/admin/task');
     console.log('[Admin] Tasks response:', response.data);
     
     if (response.data?.code === 1 && response.data?.data) {
@@ -339,7 +339,7 @@ const formatTime = (dateString) => {
 // 领取任务
 const claimTask = async (taskId) => {
   try {
-    await api.post(`/admin/task/${taskId}/claim`);
+    await api.post(`/api/admin/task/${taskId}/claim`);
     await fetchTasks();
     alert('任务领取成功！');
   } catch (error) {
@@ -351,7 +351,7 @@ const claimTask = async (taskId) => {
 // 批准任务
 const approveTask = async (taskId) => {
   try {
-    await api.post(`/admin/task/${taskId}/approve`);
+    await api.post(`/api/admin/task/${taskId}/approve`);
     await fetchTasks();
     alert('任务已批准！');
   } catch (error) {
@@ -375,7 +375,7 @@ const confirmReject = async () => {
   }
   
   try {
-    await api.post(`/admin/task/${currentTask.value.id}/reject`, null, {
+    await api.post(`/api/admin/task/${currentTask.value.id}/reject`, null, {
       params: { comment: rejectComment.value }
     });
     showRejectDialog.value = false;

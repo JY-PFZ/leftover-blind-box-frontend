@@ -82,7 +82,7 @@ onMounted(async () => {
 
   // 验证支付
   try {
-    const response = await api.post('/payment/verify', null, {
+    const response = await api.post('/api/payment/verify', null, {
       params: {
         orderId: orderId.value,
         sessionId: sessionId.value

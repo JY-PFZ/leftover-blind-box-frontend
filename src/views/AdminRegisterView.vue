@@ -213,7 +213,7 @@ const handleRegister = async () => {
     
     let response;
     try {
-      response = await api.post('/user/register', payload);
+      response = await api.post('/api/user/register', payload);
       console.log('[Admin Register] 注册响应:', response);
     } catch (apiError) {
       console.error('[Admin Register] API错误:', apiError);

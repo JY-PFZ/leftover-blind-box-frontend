@@ -294,7 +294,7 @@ async function processPayment() {
   try {
     // 1. 先创建订单
     console.log("Creating order from cart...");
-    const orderResponse = await api.post('/orders/from-cart');
+    const orderResponse = await api.post('/api/orders/from-cart');
     
     if (orderResponse.data?.code !== 20000 || !orderResponse.data?.data) {
       console.error("❌ Failed to create order:", orderResponse.data);
@@ -307,7 +307,7 @@ async function processPayment() {
 
     // 2. 调用 Stripe 支付接口
     console.log("Creating Stripe checkout session...");
-    const paymentResponse = await api.post('/payment/checkout', null, {
+    const paymentResponse = await api.post('/api/payment/checkout', null, {
       params: { orderId: newOrder.id }
     });
 

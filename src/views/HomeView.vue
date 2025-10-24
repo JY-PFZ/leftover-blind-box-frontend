@@ -174,7 +174,7 @@ const fetchSortedByDistance = async () => {
   isLoading.value = true;
   distanceSortError.value = null;
   try {
-    const response = await api.get('/merchants/nearby', {
+    const response = await api.get('/api/merchants/nearby', {
       params: {
         lat: userLocation.value.latitude,
         lon: userLocation.value.longitude,

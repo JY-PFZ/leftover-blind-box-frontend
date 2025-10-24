@@ -235,7 +235,7 @@ const cancelOrder = async (orderId) => {
 const confirmPayment = async (orderId) => {
   try {
     // 调用 Stripe 支付接口
-    const response = await api.post('/payment/checkout', null, {
+    const response = await api.post('/api/payment/checkout', null, {
       params: { orderId }
     });
     
