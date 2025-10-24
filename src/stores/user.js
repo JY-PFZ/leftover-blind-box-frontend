@@ -39,9 +39,15 @@ export const useUserStore = defineStore('user', () => {
     }
     console.log("[UserStore] Attempting to fetch user profile...");
     try {
-      // 🟢 确保路径正确 (之前测试 /api/user 返回 null)
-      const response = await api.get('/api/user'); 
-      console.log("[UserStore] /api/user Response:", response.data); // Log the full response
+      // 🟢 使用 profile/{username} 接口获取用户信息
+      const currentUsername = username.value || localStorage.getItem('username');
+      if (!currentUsername) {
+        console.warn("[UserStore] No username available to fetch profile");
+        return null;
+      }
+      
+      const response = await api.get(`/api/user/profile/${currentUsername}`); 
+      console.log("[UserStore] /api/user/profile Response:", response.data); // Log the full response
       const profile = response.data?.data; 
       
       if (profile) {
