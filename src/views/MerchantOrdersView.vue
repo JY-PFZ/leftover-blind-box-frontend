@@ -179,31 +179,47 @@ const formatStatus = (status) => {
     }
 };
 
-// --- 订单操作 (TODO: 对接 store/API) ---
+// --- 订单操作 ---
 
-const verifyOrder = (order) => {
-  // TODO: 弹出模态框，要求输入取货码
+const verifyOrder = async (order) => {
+  // 弹出模态框，要求输入取货码
   const inputCode = prompt(`Please enter the 4-digit pickup code for order ${order.orderNo}:`);
   if (inputCode === order.pickupCode) {
-    alert(`(Feature in development) Code accepted! Verifying order ${order.id}...`);
-    // await orderStore.verifyOrder(order.id, { location: 'Store Front' }); // 假设的 store action
-    // loadOrders();
+    // 验证取货码成功后，调用核销接口
+    const result = await orderStore.verifyOrder(order.id, {
+      location: 'Store Front',
+      verifierName: 'Merchant'
+    });
+    
+    if (result.success) {
+      alert(`Order ${order.orderNo} verified successfully!`);
+    } else {
+      alert(`Failed to verify order: ${result.message}`);
+    }
   } else if (inputCode) {
     alert('Invalid code. Please try again.');
   }
 };
 
 const updateOrderStatus = async (orderId, newStatus) => {
-  alert(`(Feature in development) Updating order ${orderId} to '${newStatus}'.`);
-  // await orderStore.updateStatus(orderId, newStatus); // 假设的 store action
-  // loadOrders();
+  const result = await orderStore.updateOrderStatus(orderId, newStatus);
+  
+  if (result.success) {
+    alert(`Order ${orderId} updated to '${newStatus}' successfully!`);
+  } else {
+    alert(`Failed to update order: ${result.message}`);
+  }
 };
 
 const cancelOrder = async (orderId) => {
   if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
-    alert(`(Feature in development) Cancelling order ${orderId}.`);
-    // await orderStore.cancelOrder(orderId); // 假设的 store action
-    // loadOrders();
+    const result = await orderStore.cancelOrder(orderId);
+    
+    if (result.success) {
+      alert(`Order ${orderId} cancelled successfully!`);
+    } else {
+      alert(`Failed to cancel order: ${result.message}`);
+    }
   }
 };
 

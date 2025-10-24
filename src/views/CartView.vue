@@ -167,13 +167,13 @@
         <div class="payment-methods">
           <h3>Select Payment Method</h3>
           <div class="payment-options">
-            <label class="payment-option" :class="{ active: selectedPayment === 'mock' }">
-              <input type="radio" v-model="selectedPayment" value="mock" />
+            <label class="payment-option" :class="{ active: selectedPayment === 'stripe' }">
+              <input type="radio" v-model="selectedPayment" value="stripe" />
               <div class="payment-info">
-                <div class="payment-icon">🧪</div>
+                <div class="payment-icon">💳</div>
                 <div class="payment-details">
-                  <div class="payment-name">Mock Pay (For Testing)</div>
-                  <div class="payment-desc">Simulate payment for testing purposes</div>
+                  <div class="payment-name">Stripe Payment</div>
+                  <div class="payment-desc">Secure payment powered by Stripe</div>
                 </div>
               </div>
             </label>
@@ -262,7 +262,7 @@ async function clearCart() {
 // --- 结算与支付 ---
 
 const showPaymentModal = ref(false)
-const selectedPayment = ref('mock') // 默认选中 mock 支付
+const selectedPayment = ref('stripe') // 默认选中 Stripe 支付
 const isProcessing = ref(false)
 
 function checkout() {
@@ -292,38 +292,36 @@ async function processPayment() {
   isProcessing.value = true;
 
   try {
-    // 1. (可选) 模拟支付延迟
-    console.log("Simulating payment processing...");
-    await new Promise(resolve => setTimeout(resolve, 500)); // 缩短延迟
-    console.log("Mock payment successful.");
+    // 1. 先创建订单
+    console.log("Creating order from cart...");
+    const orderResponse = await api.post('/orders/from-cart');
+    
+    if (orderResponse.data?.code !== 20000 || !orderResponse.data?.data) {
+      console.error("❌ Failed to create order:", orderResponse.data);
+      alert(`Failed to create order: ${orderResponse.data?.message || 'Unknown error'}`);
+      return;
+    }
 
-    // 2. 调用后端 API 创建订单
-    console.log("Attempting to create order from cart via API...");
-    const response = await api.post('/orders/from-cart'); // 调用后端接口
+    const newOrder = orderResponse.data.data;
+    console.log("✅ Order created successfully:", newOrder);
 
-    // 3. 处理后端响应
-    // 🟢 修正：后端成功 code 是 20000
-    if (response.data?.code === 20000 && response.data?.data) {
-      const newOrder = response.data.data;
-      console.log("✅ Order created successfully via API:", newOrder);
+    // 2. 调用 Stripe 支付接口
+    console.log("Creating Stripe checkout session...");
+    const paymentResponse = await api.post('/payment/checkout', null, {
+      params: { orderId: newOrder.id }
+    });
 
-      // 4. 订单创建成功后，刷新购物车状态（后端应该已清空）
-      await cart.fetchCart(); // 重新获取购物车，确认是否为空
-
-      // 5. 关闭模态框并跳转
-      closePaymentModal();
-      router.push('/order-history'); // 跳转到订单历史页面
-
+    if (paymentResponse.data?.success && paymentResponse.data?.checkoutUrl) {
+      // 3. 跳转到 Stripe 支付页面
+      console.log("Redirecting to Stripe checkout...");
+      window.location.href = paymentResponse.data.checkoutUrl;
     } else {
-      // API 返回失败或无效数据
-      console.error("❌ Failed to create order via API:", response.data);
-      // 显示错误信息给用户
-      alert(`Failed to create order: ${response.data?.message || 'Unknown error from server'}`);
+      console.error("❌ Failed to create payment session:", paymentResponse.data);
+      alert(`Failed to create payment session: ${paymentResponse.data?.message || 'Unknown error'}`);
     }
 
   } catch (error) {
-    console.error('❌ Error during payment processing or order creation:', error);
-    // 处理网络错误或其他异常
+    console.error('❌ Error during payment processing:', error);
     alert(`An error occurred: ${error.response?.data?.message || error.message || 'Please try again.'}`);
   } finally {
     isProcessing.value = false;

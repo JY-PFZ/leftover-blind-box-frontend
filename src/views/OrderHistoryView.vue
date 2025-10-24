@@ -123,6 +123,13 @@
                 <!-- Action Buttons -->
                 <div class="action-buttons-container border-t border-gray-200 pt-4 mt-4 flex flex-wrap gap-3 justify-end">
                   <button
+                    v-if="order.status === 'pending'"
+                    @click="confirmPayment(order.id)"
+                    class="action-button-confirm px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
+                  >
+                    Confirm Payment
+                  </button>
+                  <button
                     v-if="order.status === 'paid'"
                     @click="cancelOrder(order.id)"
                     class="action-button-cancel px-5 py-2 bg-red-100 text-red-700 rounded-xl font-semibold hover:bg-red-200 border border-red-200 transition-all duration-200 text-sm"
@@ -150,7 +157,8 @@
 
 <script setup>
 import { onMounted, computed } from 'vue';
-import { useOrderStore } from '@/stores/order.js'; // Import the new store
+import { useOrderStore } from '@/stores/order.js';
+import { api } from '@/utils/api';
 
 // --- Use the new Store ---
 const orderStore = useOrderStore();
@@ -213,14 +221,34 @@ const handleMockPayment = async (orderId) => {
 */
 
 const cancelOrder = async (orderId) => {
-  console.log(`TODO: Cancel order ${orderId}`);
-  alert(`(Feature in development) Cancel order ${orderId}.`);
+  if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+    const result = await orderStore.cancelOrder(orderId);
+    
+    if (result.success) {
+      alert(`Order ${orderId} cancelled successfully!`);
+    } else {
+      alert(`Failed to cancel order: ${result.message}`);
+    }
+  }
+};
 
-  // 示例:
-  // if (confirm('Are you sure you want to cancel this order?')) {
-  //   await orderStore.cancelOrder(orderId);
-  //   orderStore.fetchOrders({ pageNum: 1, pageSize: 20 });
-  // }
+const confirmPayment = async (orderId) => {
+  try {
+    // 调用 Stripe 支付接口
+    const response = await api.post('/payment/checkout', null, {
+      params: { orderId }
+    });
+    
+    if (response.data?.success && response.data?.checkoutUrl) {
+      // 跳转到 Stripe 支付页面
+      window.location.href = response.data.checkoutUrl;
+    } else {
+      alert(`Failed to create payment session: ${response.data?.message || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error('Payment error:', error);
+    alert(`Payment error: ${error.response?.data?.message || error.message}`);
+  }
 };
 
 
@@ -400,12 +428,12 @@ h1 {
   gap: 0.75rem; /* gap-3 */
   justify-content: flex-end;
 }
-.action-button, .action-button-review, .action-button-cancel {
+.action-button, .action-button-review, .action-button-cancel, .action-button-confirm {
   border: none;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
-.action-button, .action-button-review {
+.action-button, .action-button-review, .action-button-confirm {
   background-image: linear-gradient(to right, #2563eb, #9333ea);
   color: white;
   border-radius: 0.75rem; /* rounded-xl */
@@ -419,6 +447,14 @@ h1 {
 .action-button-review {
   padding: 0.75rem 1.5rem; /* px-6 py-3 */
   font-size: 0.875rem; /* text-sm */
+}
+.action-button-confirm {
+  padding: 0.75rem 1.5rem; /* px-6 py-3 */
+  font-size: 0.875rem; /* text-sm */
+  background-image: linear-gradient(to right, #16a34a, #2563eb); /* green to blue */
+}
+.action-button-confirm:hover {
+  background-image: linear-gradient(to right, #15803d, #1d4ed8); /* darker green to darker blue */
 }
 .action-button-cancel {
   padding: 0.5rem 1.25rem; /* px-5 py-2 */

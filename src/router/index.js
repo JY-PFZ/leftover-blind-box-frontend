@@ -51,6 +51,16 @@ const routes = [
     meta: { requiresAuth: true, roles: ['customer', 'user'] } 
   },
   {
+    path: '/payment/success',
+    name: 'PaymentSuccess',
+    component: () => import('@/views/PaymentSuccessView.vue'),
+  },
+  {
+    path: '/payment/cancel',
+    name: 'PaymentCancel',
+    component: () => import('@/views/PaymentCancelView.vue'),
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/ProfileView.vue'), 

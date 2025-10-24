@@ -88,12 +88,102 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
-  // --- 其他 Actions (例如更新状态、取消订单等，后续添加) ---
-  
-  // async function updateStatus(orderId, status) { ... }
-  // async function cancelOrder(orderId) { ... }
-  // async function verifyOrder(orderId, verificationData) { ... }
+  /**
+   * 更新订单状态
+   * @param {number} orderId - 订单ID
+   * @param {string} status - 新状态 (pending, paid, completed, cancelled)
+   * @param {string} remark - 备注（可选）
+   */
+  async function updateOrderStatus(orderId, status, remark = '') {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      console.log(`[OrderStore] Updating order ${orderId} to status: ${status}`);
+      const response = await api.put(`/orders/${orderId}/status`, {
+        status: status,
+        remark: remark
+      });
+      
+      if (response.data?.code == 20000) {
+        console.log(`[OrderStore] Order ${orderId} updated successfully`);
+        // 重新获取订单列表以更新显示
+        await fetchOrders();
+        return { success: true };
+      } else {
+        throw new Error(response.data?.message || 'Failed to update order status');
+      }
+    } catch (err) {
+      console.error(`[OrderStore] Error updating order ${orderId}:`, err);
+      error.value = err.response?.data?.message || err.message || 'Failed to update order status';
+      return { success: false, message: error.value };
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
+  /**
+   * 取消订单
+   * @param {number} orderId - 订单ID
+   */
+  async function cancelOrder(orderId) {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      console.log(`[OrderStore] Cancelling order ${orderId}`);
+      const response = await api.put(`/orders/${orderId}/cancel`);
+      
+      if (response.data?.code == 20000) {
+        console.log(`[OrderStore] Order ${orderId} cancelled successfully`);
+        // 重新获取订单列表以更新显示
+        await fetchOrders();
+        return { success: true };
+      } else {
+        throw new Error(response.data?.message || 'Failed to cancel order');
+      }
+    } catch (err) {
+      console.error(`[OrderStore] Error cancelling order ${orderId}:`, err);
+      error.value = err.response?.data?.message || err.message || 'Failed to cancel order';
+      return { success: false, message: error.value };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * 核销订单（商家使用）
+   * @param {number} orderId - 订单ID
+   * @param {object} verificationData - 核销数据 { location, verifierName }
+   */
+  async function verifyOrder(orderId, verificationData = {}) {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      console.log(`[OrderStore] Verifying order ${orderId}`, verificationData);
+      const response = await api.post(`/orders/${orderId}/verify`, {
+        orderId: orderId,
+        location: verificationData.location || 'Store Front',
+        verifierName: verificationData.verifierName || 'Merchant'
+      });
+      
+      if (response.data?.code == 20000) {
+        console.log(`[OrderStore] Order ${orderId} verified successfully`);
+        // 重新获取订单列表以更新显示
+        await fetchOrders();
+        return { success: true };
+      } else {
+        throw new Error(response.data?.message || 'Failed to verify order');
+      }
+    } catch (err) {
+      console.error(`[OrderStore] Error verifying order ${orderId}:`, err);
+      error.value = err.response?.data?.message || err.message || 'Failed to verify order';
+      return { success: false, message: error.value };
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   return {
     orders,
@@ -101,7 +191,9 @@ export const useOrderStore = defineStore('order', () => {
     isLoading,
     error,
     fetchOrders,
-    // 其他需要暴露的 actions
+    updateOrderStatus,
+    cancelOrder,
+    verifyOrder,
   };
 });
 
