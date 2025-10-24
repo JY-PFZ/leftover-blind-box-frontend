@@ -74,6 +74,9 @@ export const useCartStore = defineStore('cart', () => {
       _updateCartState(cartData);
     } catch (error) {
       console.error(`[CartStore] Failed to add item #${magicbagId}:`, error);
+      console.error(`[CartStore] Error response:`, error.response?.data);
+      console.error(`[CartStore] Request URL:`, error.config?.url);
+      console.error(`[CartStore] Request params:`, error.config?.params);
     } finally {
       isLoading.value = false;
     }
