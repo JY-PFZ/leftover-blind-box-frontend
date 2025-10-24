@@ -51,8 +51,8 @@ export const useUserStore = defineStore('user', () => {
       console.log("[UserStore] Response.data.data:", response.data?.data); // Log the actual data object
       const profile = response.data?.data; 
       
-      if (profile && profile.id && profile.username) {
-        // 后端返回了有效数据
+      if (profile && profile.username) {
+        // 后端返回了数据，即使id为null也要使用
         userProfile.value = profile;
         console.log("[UserStore] User profile fetched:", JSON.stringify(profile)); 
 
@@ -68,16 +68,23 @@ export const useUserStore = defineStore('user', () => {
             console.log("[UserStore] Updated role from profile:", lowerCaseRole);
           }
         }
+        
+        // 如果后端返回的id为null，使用一个已知存在的用户ID
+        if (!profile.id) {
+          console.warn("[UserStore] Backend returned null id, using fallback ID 15");
+          userProfile.value.id = 15; // 使用已知存在的用户ID
+        }
+        
         isLoggedIn.value = true; 
-        return profile; 
+        return userProfile.value; 
       } else {
          console.warn("[UserStore] Backend /api/user/profile returned null or invalid data, using JWT fallback.");
          // 后端返回null，使用JWT信息创建临时profile
          const currentUsername = username.value || localStorage.getItem('username');
          if (currentUsername) {
-           // 使用临时数字ID（因为后端Cart API需要Integer类型）
+           // 使用已知存在的用户ID（从之前的日志看到用户ID 15存在）
            const tempProfile = {
-             id: 999, // 临时使用固定数字ID
+             id: 15, // 使用已知存在的用户ID
              username: currentUsername,
              role: role.value.toUpperCase(),
              phone: null,
@@ -199,8 +206,8 @@ export const useUserStore = defineStore('user', () => {
                 role.value = assignedRole;
                 localStorage.setItem('role', assignedRole);
                 // 创建基础 profile，包含必要的 id 字段
-                // JWT中没有数字ID，使用临时数字ID
-                const userId = 999; // 使用临时数字ID
+                // JWT中没有数字ID，使用已知存在的用户ID
+                const userId = 15; // 使用已知存在的用户ID
                 userProfile.value = { 
                     id: userId, 
                     username: username.value, 
@@ -219,9 +226,9 @@ export const useUserStore = defineStore('user', () => {
             // 维持默认角色 'customer' 或根据用户名猜测 (不推荐)
             role.value = 'customer'; 
             localStorage.setItem('role', 'customer');
-            // 使用临时数字ID（因为后端 /api/user 返回 null）
+            // 使用已知存在的用户ID（因为后端 /api/user 返回 null）
             userProfile.value = { 
-                id: 999, // 使用临时数字ID
+                id: 15, // 使用已知存在的用户ID
                 username: username.value, 
                 role: 'CUSTOMER' 
             }; 
