@@ -12,8 +12,15 @@ export default defineConfig({
         // 🔧 连接到微服务后端
         target: 'http://13.215.158.65:10016', 
         changeOrigin: true,
+        secure: false,
         // 去掉 /api 前缀，因为后端微服务路径不包含 /api
-        rewrite: (path) => path.replace(/^\/api/, '') 
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        // 调试日志
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('[Proxy] ->', req.method, proxyReq.getHeader('host'), req.url);
+          });
+        }
       }
     }
   },
