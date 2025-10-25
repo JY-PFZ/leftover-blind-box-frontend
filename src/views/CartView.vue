@@ -35,10 +35,10 @@
       <!-- 使用 lastUpdated 作为 key 来强制刷新 -->
       <div v-else class="cart-content" :key="cart.lastUpdated">
         <div class="cart-items">
-          <!-- 使用 item.magicbagId 作为 key，更稳定 -->
+          <!-- 🟢 修正 key: 使用 item.magicBagId (大写 B) -->
           <div
             v-for="(item, index) in cart.items"
-            :key="item.magicbagId || index"
+            :key="item.magicBagId || index" 
             class="cart-item"
           >
             <!-- 商品图片 -->
@@ -53,12 +53,13 @@
               <!-- 使用 bagName -->
               <h3 class="item-title">{{ item.bagName }}</h3>
               <p class="item-price">${{ (item.price || 0).toFixed(2) }}</p>
-              <p v-if="item.magicbagId" class="item-merchant">
-                MagicBag ID: {{ item.magicbagId }}
+              <!-- 🟢 修正 v-if: 使用 item.magicBagId (大写 B) -->
+              <p v-if="item.magicBagId" class="item-merchant">
+                MagicBag ID: {{ item.magicBagId }}
               </p>
-              <!-- 显示 invalid 警告 -->
-              <p v-if="!item.magicbagId" class="item-invalid-warning">
-                ⚠️ Item data is invalid.
+              <!-- 🟢 修正 v-if: 使用 !item.magicBagId (大写 B) -->
+              <p v-if="!item.magicBagId" class="item-invalid-warning">
+                ⚠️ Item data is invalid (Missing ID).
               </p>
             </div>
 
@@ -67,26 +68,25 @@
               <div class="quantity-control">
                 <button
                   class="qty-btn"
-                  @click="updateQuantity(item.magicbagId, item.quantity - 1)"
-                  :disabled="cart.isLoading || !item.magicbagId || item.quantity <= 1"
+                  @click="updateQuantity(item.magicBagId, item.quantity - 1)"
+                  :disabled="cart.isLoading || !item.magicBagId || item.quantity <= 1"
                 >
                   −
                 </button>
                 <span class="quantity">{{ item.quantity }}</span>
                 <button
                   class="qty-btn"
-                  @click="updateQuantity(item.magicbagId, item.quantity + 1)"
-                  :disabled="cart.isLoading || !item.magicbagId"
+                  @click="updateQuantity(item.magicBagId, item.quantity + 1)"
+                  :disabled="cart.isLoading || !item.magicBagId"
                 >
                   +
                 </button>
               </div>
 
-              <!-- 删除按钮 -->
               <button
                 class="remove-btn"
-                @click="removeItem(item.magicbagId)"
-                :disabled="cart.isLoading || !item.magicbagId"
+                @click="removeItem(item.magicBagId)"
+                :disabled="cart.isLoading || !item.magicBagId"
                 title="Remove item"
               >
                 🗑️ Remove
@@ -136,7 +136,7 @@
     </div>
   </div>
 
-  <!-- 支付模态框 (保持不变) -->
+  <!-- 支付模态框 -->
   <div v-if="showPaymentModal" class="payment-modal-overlay" @click.self="closePaymentModal">
     <div class="payment-modal">
       <div class="payment-header">
@@ -149,8 +149,7 @@
         <div class="order-summary">
           <h3>Order Summary</h3>
           <div class="summary-items">
-            <!-- 使用 item.magicbagId 作为 key -->
-            <div v-for="item in cart.items" :key="item.magicbagId" class="summary-item">
+            <div v-for="item in cart.items" :key="item.magicBagId" class="summary-item">
               <!-- 使用 bagName -->
               <span class="item-name">{{ item.bagName }}</span>
               <span class="item-qty">×{{ item.quantity }}</span>
@@ -167,13 +166,13 @@
         <div class="payment-methods">
           <h3>Select Payment Method</h3>
           <div class="payment-options">
-            <label class="payment-option" :class="{ active: selectedPayment === 'stripe' }">
-              <input type="radio" v-model="selectedPayment" value="stripe" />
+            <label class="payment-option" :class="{ active: selectedPayment === 'mock' }">
+              <input type="radio" v-model="selectedPayment" value="mock" />
               <div class="payment-info">
-                <div class="payment-icon">💳</div>
+                <div class="payment-icon">🧪</div>
                 <div class="payment-details">
-                  <div class="payment-name">Stripe Payment</div>
-                  <div class="payment-desc">Secure payment powered by Stripe</div>
+                  <div class="payment-name">Mock Pay (For Testing)</div>
+                  <div class="payment-desc">Simulate payment for testing purposes</div>
                 </div>
               </div>
             </label>
@@ -200,30 +199,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue' // 导入 watch 和 nextTick
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch, nextTick } from 'vue' 
+import { useRouter, RouterLink } from 'vue-router' // 🟢 导入 RouterLink
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
-import { api } from '@/utils/api' // 确保导入 api
+import { api } from '@/utils/api' 
 
 const cart = useCartStore()
 const user = useUserStore()
 const router = useRouter()
 
-// Debug: 添加 Watcher 监听 cart.items 的变化，并在 nextTick 中读取
+// Debug Watcher (保持不变)
 watch(() => cart.items, (newItems) => {
   console.log('[CartView Debug] cart.items changed!');
-  // 使用 nextTick 确保在 DOM 更新后读取状态
   nextTick(() => {
     console.log('[CartView Debug] Reading items in nextTick:', JSON.parse(JSON.stringify(cart.items)));
-    // 检查新数组中每个 item 是否包含 magicbagId
     if (Array.isArray(cart.items)) {
       cart.items.forEach((item, index) => {
-        console.log(`[CartView Debug] Item ${index} (in nextTick):`, JSON.parse(JSON.stringify(item)), 'Has magicbagId:', item && item.hasOwnProperty('magicbagId'), 'Value:', item ? item.magicbagId : 'item is null/undefined');
+        // 🟢 修正 Debug Log: 使用 item.magicBagId (大写 B)
+        console.log(`[CartView Debug] Item ${index} (in nextTick):`, JSON.parse(JSON.stringify(item)), 'Has magicBagId (B):', item && item.hasOwnProperty('magicBagId'), 'Value (B):', item ? item.magicBagId : 'item is null/undefined');
       });
     }
   });
-}, { deep: true, immediate: true }); // 使用 immediate: true 确保初始加载也触发
+}, { deep: true, immediate: true }); 
 
 
 // 页面加载时自动获取购物车
@@ -234,46 +232,42 @@ onMounted(() => {
 })
 
 // 更新商品数量
-async function updateQuantity(magicbagId, newQty) {
-  if (!magicbagId) {
-    console.error("updateQuantity called with invalid magicbagId:", magicbagId);
+async function updateQuantity(magicBagId, newQty) { // 🟢 参数名改为 magicBagId (大写 B)
+  if (!magicBagId) { // 🟢 检查 magicBagId
+    console.error("updateQuantity called with invalid magicBagId:", magicBagId);
     return;
   }
-  // 调用 store 中的异步 action
-  await cart.updateItemQuantity(magicbagId, newQty);
+  await cart.updateItemQuantity(magicBagId, newQty); // 🟢 传递 magicBagId
 }
 
-// 删除商品 (移除 confirm)
-async function removeItem(magicbagId) {
-  if (!magicbagId) {
-    console.error("removeItem called with invalid magicbagId:", magicbagId);
+// 删除商品
+async function removeItem(magicBagId) { // 🟢 参数名改为 magicBagId (大写 B)
+  if (!magicBagId) { // 🟢 检查 magicBagId
+    console.error("removeItem called with invalid magicBagId:", magicBagId);
     return;
   }
-  // 调用 store 中的异步 action
-  await cart.removeItemFromCart(magicbagId);
+  await cart.removeItemFromCart(magicBagId); // 🟢 传递 magicBagId
 }
 
-// 清空购物车 (移除 confirm)
+// 清空购物车
 async function clearCart() {
-  // 调用 store 中的异步 action
   await cart.clearServerCart();
 }
 
 // --- 结算与支付 ---
 
 const showPaymentModal = ref(false)
-const selectedPayment = ref('stripe') // 默认选中 Stripe 支付
+const selectedPayment = ref('mock') 
 const isProcessing = ref(false)
 
 function checkout() {
   if (!user.isLoggedIn) {
-    // 如果用户未登录，触发全局事件打开登录弹窗
     window.dispatchEvent(new Event('open-login'));
     return;
   }
-  if (!cart.items || cart.items.length === 0) { // 检查 items 是否存在且不为空
+  if (!cart.items || cart.items.length === 0) { 
     console.warn('Cart is empty, cannot proceed to checkout.');
-    alert('Your cart is empty!'); // 添加用户提示
+    alert('Your cart is empty!'); 
     return;
   }
   showPaymentModal.value = true;
@@ -292,36 +286,29 @@ async function processPayment() {
   isProcessing.value = true;
 
   try {
-    // 1. 先创建订单
-    console.log("Creating order from cart...");
-    const orderResponse = await api.post('/orders/from-cart');
-    
-    if (orderResponse.data?.code !== 20000 || !orderResponse.data?.data) {
-      console.error("❌ Failed to create order:", orderResponse.data);
-      alert(`Failed to create order: ${orderResponse.data?.message || 'Unknown error'}`);
-      return;
-    }
+    console.log("Simulating payment processing...");
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    console.log("Mock payment successful.");
 
-    const newOrder = orderResponse.data.data;
-    console.log("✅ Order created successfully:", newOrder);
+    console.log("Attempting to create order from cart via API...");
+    const response = await api.post('/api/orders/from-cart'); 
 
-    // 2. 调用 Stripe 支付接口
-    console.log("Creating Stripe checkout session...");
-    const paymentResponse = await api.post('/payment/checkout', null, {
-      params: { orderId: newOrder.id }
-    });
+    // 使用正确的成功 code 判断
+    if (response.data?.code == 20000 && response.data?.data) {
+      const newOrder = response.data.data;
+      console.log("✅ Order created successfully via API:", newOrder);
 
-    if (paymentResponse.data?.success && paymentResponse.data?.checkoutUrl) {
-      // 3. 跳转到 Stripe 支付页面
-      console.log("Redirecting to Stripe checkout...");
-      window.location.href = paymentResponse.data.checkoutUrl;
+      await cart.fetchCart(); 
+      closePaymentModal();
+      router.push('/order-history'); 
+
     } else {
-      console.error("❌ Failed to create payment session:", paymentResponse.data);
-      alert(`Failed to create payment session: ${paymentResponse.data?.message || 'Unknown error'}`);
+      console.error("❌ Failed to create order via API:", response.data);
+      alert(`Failed to create order: ${response.data?.message || 'Unknown error from server'}`);
     }
 
   } catch (error) {
-    console.error('❌ Error during payment processing:', error);
+    console.error('❌ Error during payment processing or order creation:', error);
     alert(`An error occurred: ${error.response?.data?.message || error.message || 'Please try again.'}`);
   } finally {
     isProcessing.value = false;
@@ -469,10 +456,6 @@ async function processPayment() {
   font-size: 18px;
   font-weight: 600;
   color: #333;
-  /* Optional: prevent long titles from breaking layout */
-  /* white-space: nowrap; */
-  /* overflow: hidden; */
-  /* text-overflow: ellipsis; */
 }
 
 .item-price {
@@ -953,3 +936,4 @@ async function processPayment() {
   }
 }
 </style>
+

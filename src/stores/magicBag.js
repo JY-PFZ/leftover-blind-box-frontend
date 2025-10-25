@@ -37,13 +37,11 @@ export const useMagicBagStore = defineStore('magicBag', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      // 调用 GET /api/product/magic-bags/merchant/{merchantId}
-      const response = await api.get(`/api/product/magic-bags/merchant/${currentMerchantId}`);
-      if (response.data?.code === 20000 && Array.isArray(response.data?.data)) {
+      // 🟢 改回：使用 /api/product/magic-bags 路径
+      const response = await api.get(`/api/product/magic-bags/merchant/${currentMerchantId}`); 
+      if (response.data?.code == 20000 && Array.isArray(response.data?.data)) { 
         magicBags.value = response.data.data;
         console.log(`[MagicBagStore] Fetched ${magicBags.value.length} magic bags for merchant ${currentMerchantId}`);
-        // TODO: 如果后端支持分页，这里需要处理分页信息
-        // pagination.value = ...
       } else {
         throw new Error(response.data?.message || 'Failed to fetch magic bags.');
       }
@@ -62,20 +60,18 @@ export const useMagicBagStore = defineStore('magicBag', () => {
      if (!merchantStore.currentMerchant?.id) {
         throw new Error("Cannot create bag: Merchant ID not available.");
     }
-    // 确保提交的数据包含 merchantId
     const dataToSubmit = { 
         ...bagData, 
         merchantId: merchantStore.currentMerchant.id 
     };
 
-    isLoading.value = true; // 可以为创建操作设置单独的 loading 状态
+    isLoading.value = true; 
     error.value = null;
     try {
-      // 调用 POST /api/product/magic-bags
-      const response = await api.post('/api/product/magic-bags', dataToSubmit);
-      if (response.data?.code === 20000 && response.data?.data) {
+      // 🟢 改回：使用 /api/product/magic-bags 路径
+      const response = await api.post('/api/product/magic-bags', dataToSubmit); 
+      if (response.data?.code == 20000 && response.data?.data) { 
         console.log("[MagicBagStore] Magic Bag created successfully:", response.data.data);
-        // 创建成功后，重新获取列表以显示新项
         await fetchMyMagicBags(); 
         return { success: true, data: response.data.data };
       } else {
@@ -86,20 +82,19 @@ export const useMagicBagStore = defineStore('magicBag', () => {
       error.value = err.response?.data?.message || err.message || 'An unknown error occurred.';
       return { success: false, message: error.value };
     } finally {
-       isLoading.value = false; // 结束 loading
+       isLoading.value = false; 
     }
   };
 
   // 更新 Magic Bag
   const updateMagicBag = async (bagId, bagData) => {
-    isLoading.value = true; // 可以为更新操作设置单独的 loading 状态
+    isLoading.value = true; 
     error.value = null;
      try {
-      // 调用 PUT /api/product/magic-bags/{id}
-      const response = await api.put(`/api/product/magic-bags/${bagId}`, bagData);
-      if (response.data?.code === 20000 && response.data?.data) {
+      // 🟢 改回：使用 /api/product/magic-bags 路径
+      const response = await api.put(`/api/product/magic-bags/${bagId}`, bagData); 
+      if (response.data?.code == 20000 && response.data?.data) { 
         console.log(`[MagicBagStore] Magic Bag ${bagId} updated successfully:`, response.data.data);
-        // 更新成功后，重新获取列表以显示更改
         await fetchMyMagicBags();
         return { success: true, data: response.data.data };
       } else {
@@ -110,21 +105,20 @@ export const useMagicBagStore = defineStore('magicBag', () => {
       error.value = err.response?.data?.message || err.message || 'An unknown error occurred.';
       return { success: false, message: error.value };
     } finally {
-       isLoading.value = false; // 结束 loading
+       isLoading.value = false; 
     }
   };
 
   // 删除 Magic Bag (软删除)
   const deleteMagicBag = async (bagId) => {
-    isLoading.value = true; // 可以为删除操作设置单独的 loading 状态
+    isLoading.value = true; 
     error.value = null;
      try {
-      // 调用 DELETE /api/product/magic-bags/{id}
-      const response = await api.delete(`/api/product/magic-bags/${bagId}`);
-      // 检查后端是否成功 (通常 DELETE 成功返回 200 或 204)
-       if (response.status === 200 || response.status === 204 || response.data?.code === 20000) {
+      // 🟢 改回：使用 /api/product/magic-bags 路径
+      const response = await api.delete(`/api/product/magic-bags/${bagId}`); 
+      // 检查后端是否成功
+       if (response.status === 200 || response.status === 204 || response.data?.code == 20000) { 
         console.log(`[MagicBagStore] Magic Bag ${bagId} deleted successfully.`);
-        // 删除成功后，重新获取列表以移除该项
         await fetchMyMagicBags();
         return { success: true };
       } else {
@@ -135,19 +129,44 @@ export const useMagicBagStore = defineStore('magicBag', () => {
       error.value = err.response?.data?.message || err.message || 'An unknown error occurred.';
       return { success: false, message: error.value };
     } finally {
-       isLoading.value = false; // 结束 loading
+       isLoading.value = false; 
     }
   };
+
+  // 获取所有 Magic Bags (用于 HomeView)
+  const fetchAllMagicBags = async (page = 1, size = 999) => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+        // 🟢 改回：使用 /api/product/magic-bags 路径
+        const response = await api.get('/api/product/magic-bags', { params: { page, size } }); 
+        if (response.data?.code == 20000 && response.data?.data?.magicBags) { 
+            console.log(`[MagicBagStore] Fetched all magic bags (page ${page}, size ${size})`);
+            return response.data.data.magicBags;
+        } else {
+             throw new Error(response.data?.message || 'Failed to fetch all magic bags.');
+        }
+    } catch (err) {
+         console.error('[MagicBagStore] Error fetching all magic bags:', err);
+         error.value = err.response?.data?.message || err.message || 'An unknown error occurred.';
+         return []; // 返回空数组表示失败
+    } finally {
+         isLoading.value = false; 
+    }
+  };
+
 
   return {
     magicBags,
     isLoading,
     error,
     pagination,
-    merchantId, // 暴露 merchantId getter
+    merchantId, 
     fetchMyMagicBags,
     createMagicBag,
     updateMagicBag,
     deleteMagicBag,
+    fetchAllMagicBags, 
   };
 });
+

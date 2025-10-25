@@ -19,7 +19,7 @@ export default defineConfig({
         secure: false,
         // 你的后端 Controller 是以 /auth /user /product/... 开头，没有 /api 前缀
         // 因此需要把 "/api" 前缀去掉
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        //rewrite: (path) => path.replace(/^\/api/, ''),
         // 可选：看见代理日志（排查超好用）
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {

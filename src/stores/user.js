@@ -2,6 +2,107 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { api } from '@/utils/api';
 
+// --- 辅助函数：尝试解码 JWT ---
+function decodeJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null; // Invalid token format
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("[UserStore] Failed to decode JWT:", error);
+    return null;
+  }
+}
+
+// --- 辅助函数：从解码后的 Token 中提取角色 (带超详细日志) ---
+function extractRoleFromToken(decodedToken) {
+    console.log("-------------------- EXTRACT ROLE START --------------------"); // 🟢
+    if (!decodedToken) {
+        console.log("[UserStore JWT Decode] Decoded token is null, returning 'customer'.");
+        console.log("-------------------- EXTRACT ROLE END ----------------------"); // 🟢
+        return 'customer'; // 默认角色
+    }
+
+    console.log("[UserStore JWT Decode] Attempting to extract role from:", JSON.stringify(decodedToken));
+
+    // 尝试常见的角色声明字段
+    const rolesClaim = decodedToken.roles || decodedToken.authorities || decodedToken.role;
+    let rolesArray = [];
+    let finalRole = 'customer'; // 🟢 默认值
+
+    console.log("[UserStore JWT Decode] Raw rolesClaim:", rolesClaim, "(type:", typeof rolesClaim + ")");
+
+    if (typeof rolesClaim === 'string') {
+        const singleRole = rolesClaim.trim();
+        console.log("[UserStore JWT Decode] rolesClaim is single string:", `'${singleRole}'`); // 🟢 加引号看清空格
+        // 移除 ROLE_ 前缀并转小写
+        const normalizedRole = singleRole.startsWith('ROLE_') ? singleRole.substring(5).toLowerCase() : singleRole.toLowerCase();
+        console.log("[UserStore JWT Decode] Normalized single role:", `'${normalizedRole}'`); // 🟢 加引号看清空格
+
+        // 🟢 直接判断这个标准化的角色 (添加详细日志)
+        console.log(`[UserStore JWT Decode] Comparing normalizedRole ('${normalizedRole}') with 'merchant'...`);
+        if (normalizedRole === 'merchant') {
+             console.log("[UserStore JWT Decode] EXACT MATCH found: 'merchant'. Setting finalRole to 'merchant'.");
+             finalRole = 'merchant';
+        } else {
+             console.log(`[UserStore JWT Decode] Comparing normalizedRole ('${normalizedRole}') with 'admin' or 'super_admin'...`);
+             if (normalizedRole === 'admin' || normalizedRole === 'super_admin') {
+                 console.log("[UserStore JWT Decode] EXACT MATCH found: 'admin'/'super_admin'. Setting finalRole to 'admin'.");
+                 finalRole = 'admin';
+             } else {
+                  console.log(`[UserStore JWT Decode] Comparing normalizedRole ('${normalizedRole}') with 'customer' or 'user'...`);
+                  if (normalizedRole === 'customer' || normalizedRole === 'user') {
+                      console.log("[UserStore JWT Decode] EXACT MATCH found: 'customer'/'user'. Setting finalRole to 'customer'.");
+                      finalRole = 'customer';
+                  } else {
+                      console.log("[UserStore JWT Decode] Single role string did not match known roles ('merchant', 'admin', 'customer', 'user'). Keeping default 'customer'.");
+                      // finalRole 保持 'customer'
+                  }
+             }
+        }
+    } 
+    else if (Array.isArray(rolesClaim)) {
+        rolesArray = rolesClaim.map(r => String(r).trim()); 
+         console.log("[UserStore JWT Decode] rolesClaim is array, rolesArray:", rolesArray);
+        const normalizedRoles = rolesArray.map(r => r.startsWith('ROLE_') ? r.substring(5).toLowerCase() : r.toLowerCase());
+        console.log("[UserStore JWT Decode] Normalized roles for checking:", normalizedRoles);
+
+        console.log("[UserStore JWT Decode] Checking if normalizedRoles includes 'merchant'...");
+        if (normalizedRoles.includes('merchant')) {
+            console.log("[UserStore JWT Decode] INCLUDES 'merchant'. Setting finalRole to 'merchant'.");
+            finalRole = 'merchant';
+        } else {
+             console.log("[UserStore JWT Decode] Checking if normalizedRoles includes 'admin' or 'super_admin'...");
+             if (normalizedRoles.includes('admin') || normalizedRoles.includes('super_admin')) {
+                 console.log("[UserStore JWT Decode] INCLUDES 'admin'/'super_admin'. Setting finalRole to 'admin'.");
+                 finalRole = 'admin';
+             } else {
+                  console.log("[UserStore JWT Decode] Checking if normalizedRoles includes 'customer' or 'user'...");
+                  if (normalizedRoles.includes('customer') || normalizedRoles.includes('user')) {
+                       console.log("[UserStore JWT Decode] INCLUDES 'customer'/'user'. Setting finalRole to 'customer'.");
+                       finalRole = 'customer'; 
+                  } else {
+                       console.log("[UserStore JWT Decode] No specific role matched in normalizedRoles array. Keeping default 'customer'.");
+                       // finalRole 保持 'customer'
+                  }
+             }
+        }
+    } 
+    else {
+        console.log("[UserStore JWT Decode] No standard role claim ('roles', 'authorities', 'role') found or invalid format. Keeping default 'customer'.");
+        // finalRole 保持 'customer'
+    }
+
+    console.log("[UserStore JWT Decode] Final determined role:", `'${finalRole}'`); // 🟢 最终结果加引号
+    console.log("-------------------- EXTRACT ROLE END ----------------------"); // 🟢
+    return finalRole; 
+}
+
+
 export const useUserStore = defineStore('user', () => {
   // --- 状态 ---
   const token = ref(localStorage.getItem('token') || '');
@@ -9,30 +110,27 @@ export const useUserStore = defineStore('user', () => {
   const role = ref(localStorage.getItem('role') || 'customer'); 
   const userProfile = ref(null); 
   const isLoggedIn = ref(!!token.value);
-  // 🟢 使用 ref 跟踪初始化状态，并确保默认值为 false
   const isInitialized = ref(false); 
   const showLoginModal = ref(false); 
 
   // --- Actions ---
 
   const fetchUserProfile = async () => {
-    // 🟢 增加检查，如果 token 为空，直接返回 null 或抛出错误，避免无效请求
+    // ... (保持不变) ...
     if (!token.value) {
         console.warn("[UserStore] No token found, cannot fetch user profile.");
-        // 清理可能残留的状态
-        await logout(false); // 调用 logout 清理，但不重定向
-        return null; // 返回 null 表示获取失败
+        if (isLoggedIn.value) await logout(false); 
+        return null; 
     }
     console.log("[UserStore] Attempting to fetch user profile...");
     try {
-      const response = await api.get('/api/user');
-      console.log("[UserStore] Full response data:", response.data);
-      console.log("[UserStore] response.data.data:", response.data?.data);
+      const response = await api.get('/api/user'); 
+      console.log("[UserStore] /api/user Response:", response.data); 
       const profile = response.data?.data; 
       
       if (profile) {
         userProfile.value = profile;
-        console.log("[UserStore] User profile fetched:", JSON.stringify(profile)); // Log 内容
+        console.log("[UserStore] User profile fetched:", JSON.stringify(profile)); 
 
         if (profile.username) {
           username.value = profile.username;
@@ -40,35 +138,31 @@ export const useUserStore = defineStore('user', () => {
         }
         if (profile.role) {
           const lowerCaseRole = profile.role.toLowerCase();
-          // 🟢 只有在角色实际改变时才更新 localStorage
           if (role.value !== lowerCaseRole) {
             role.value = lowerCaseRole;
             localStorage.setItem('role', lowerCaseRole);
             console.log("[UserStore] Updated role from profile:", lowerCaseRole);
           }
         }
-        isLoggedIn.value = true; // 确认已登录
-        return profile; // 返回获取到的 profile
+        isLoggedIn.value = true; 
+        return profile; 
       } else {
-         console.warn("[UserStore] Fetched profile data is null or undefined.");
-         console.warn("[UserStore] This is likely a backend issue - microservice /user endpoint returning null.");
-         // 🔧 临时修复：不调用logout，让调用者（login函数）处理
+         console.warn("[UserStore] Backend /api/user returned null data.");
          return null;
       }
 
     } catch (error) {
       console.error("[UserStore] 获取用户资料失败:", error.response?.data || error.message);
-      // 🔧 临时修复：不调用logout，让调用者（login函数）处理
-      return null; // 返回 null 表示获取失败
-      // throw error; // 或者重新抛出错误
+      return null; 
     }
   };
   
   const updateUserProfile = async (profileData) => {
+    // ... (保持不变) ...
     if (!isLoggedIn.value) return { success: false, message: "Not logged in." };
     try {
       await api.put('/api/user/profile', profileData);
-      await fetchUserProfile(); // 更新后重新获取
+      await fetchUserProfile(); 
       return { success: true };
     } catch (error) {
       console.error("[UserStore] 更新用户资料失败:", error);
@@ -77,25 +171,20 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
-  // 🟢 添加一个可选参数，决定是否在登出后重定向
   const logout = async (shouldRedirect = true) => { 
+    // ... (保持不变) ...
     console.log("[UserStore] Logging out...");
     token.value = '';
     username.value = '';
     role.value = 'customer'; 
     userProfile.value = null; 
     isLoggedIn.value = false;
-    isInitialized.value = false; // 重置初始化，下次需要重新初始化
+    isInitialized.value = false; 
     localStorage.clear();
-    // 注意：不需要手动删除 api.defaults.headers.common['Authorization']
-    // 因为拦截器会自动检查 localStorage，如果 token 不存在就不会添加 Authorization header
     console.log("[UserStore] Logout complete.");
-    // 🟢 根据参数决定是否跳转
-    // if (shouldRedirect && router) { // 确保 router 实例可用
-    //   router.push('/'); 
-    // }
   };
   
+  // Login 函数使用更新后的角色提取逻辑
   const login = async (usernameInput, password) => {
     try {
       const response = await api.post('/api/auth/login', {
@@ -104,82 +193,95 @@ export const useUserStore = defineStore('user', () => {
       });
 
       console.log('[Login Debug] Full response:', response);
-      console.log('[Login Debug] Response headers:', response.headers);
-      console.log('[Login Debug] Response data:', response.data);
-      console.log('[Login Debug] Checking for token in multiple locations...');
+      const receivedToken = response.headers?.['x-new-token'] || response.headers?.['X-New-Token'];
 
-      // 🔧 从多个位置提取 token
-      const receivedToken =
-        response.headers?.['x-new-token'] ||
-        response.headers?.['X-New-Token'] ||
-        response.headers?.['X-NEW-TOKEN'] ||
-        response.data?.data?.token ||
-        response.data?.token;
-
-      console.log('[Login Debug] Extracted token:', receivedToken ? 'Found' : 'Not found');
+      console.log('[Login Debug] Extracted token:', receivedToken ? 'Token Found' : 'Token Not found in headers');
 
       if (!receivedToken) {
-          console.error('[Login Debug] Token not found in:', {
-            headers: response.headers,
-            data: response.data
-          });
+          console.error('[Login Debug] Token not found in response headers.');
           throw new Error('Login response did not contain a token.');
       }
       
       token.value = receivedToken;
       localStorage.setItem('token', receivedToken);
-      // 保存用户名以便后续使用
-      localStorage.setItem('temp_username', usernameInput);
-      // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
-      // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
-      console.log("[UserStore] Login successful, token set.");
 
-      // 登录成功后，获取 profile 并更新状态
+      console.log("[UserStore] Login successful, token acquired.");
+
+      // 尝试获取 profile
       const profile = await fetchUserProfile(); 
-      if (!profile) {
-        // 🔧 临时修复：如果获取用户资料失败，使用登录时保存的用户名创建临时资料
-        console.warn("[UserStore] Failed to fetch profile, creating temporary profile from login username");
-        const tempProfile = {
-          username: usernameInput,
-          role: 'CUSTOMER' // 默认角色
-        };
-        userProfile.value = tempProfile;
-        username.value = usernameInput;
-        localStorage.setItem('username', usernameInput);
-        role.value = 'customer';
-        localStorage.setItem('role', 'customer');
-        isLoggedIn.value = true;
-        isInitialized.value = true; // 标记初始化完成
-        return tempProfile;
+      
+      if (profile) {
+        console.log("[UserStore] Profile fetched successfully after login.");
+        isLoggedIn.value = true; 
+      } else {
+        console.warn("[UserStore] Profile fetch failed after login. Using JWT decode fallback.");
+        isLoggedIn.value = true; // 关键：设置登录状态为 true
+
+        const decodedToken = decodeJwt(receivedToken);
+        const extractedRole = extractRoleFromToken(decodedToken); // 🟢 使用带详细日志的辅助函数
+        const usernameFromSub = decodedToken?.sub || usernameInput; 
+        const userIdFromToken = decodedToken?.id || decodedToken?.userId;
+
+        username.value = usernameFromSub;
+        localStorage.setItem('username', usernameFromSub);
+        role.value = extractedRole; // 设置解码出的角色
+        localStorage.setItem('role', extractedRole);
+        userProfile.value = { 
+            id: userIdFromToken || null, 
+            username: username.value, 
+            role: role.value.toUpperCase() 
+        }; 
+        console.log(`[UserStore] Using fallback info: User=${username.value}, Role=${role.value}, ID from token=${userIdFromToken || 'Not Found'}`);
       }
-      isInitialized.value = true; // 登录成功也意味着初始化完成
-      return { success: true };
+
+      isInitialized.value = true; 
+      return { success: true }; // 只要拿到 token 就返回成功
+
     } catch (error) {
       console.error('API 登录失败:', error.response?.data || error.message);
       const errorMessage = error.response?.data?.message || error.message || 'An unknown error occurred.';
-      await logout(false); // 登录失败清理状态，不重定向
+      await logout(false); 
       return { success: false, message: errorMessage };
     }
   };
   
-  // 初始化函数
+  // Initialize 函数使用更新后的角色提取逻辑
   const initialize = async () => {
-    // 🟢 改进初始化逻辑，确保只执行一次，并正确处理 token
     if (isInitialized.value) return;
     console.log("[UserStore] Initializing...");
 
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
       token.value = savedToken;
-      // 注意：不需要手动设置 api.defaults.headers.common['Authorization']
-      // 因为 api.js 的拦截器会自动从 localStorage 读取 token 并添加到请求头
       console.log("[UserStore] Found token in localStorage, attempting to fetch profile.");
-      // 尝试获取 profile 来验证 token 并设置登录状态
-      await fetchUserProfile(); // fetchUserProfile 内部会设置 isLoggedIn
+      
+      const profile = await fetchUserProfile(); // 尝试获取 profile
+
+      if (!profile) {
+        console.warn("[UserStore] Profile fetch failed during init. Using JWT decode fallback.");
+        isLoggedIn.value = true; // 关键：设置登录状态为 true
+        
+        const decodedToken = decodeJwt(savedToken);
+        const extractedRole = extractRoleFromToken(decodedToken); // 🟢 使用带详细日志的辅助函数
+        const usernameFromSub = decodedToken?.sub || localStorage.getItem('username') || ''; 
+        const userIdFromToken = decodedToken?.id || decodedToken?.userId;
+
+        username.value = usernameFromSub;
+        localStorage.setItem('username', usernameFromSub); // 更新存储
+        role.value = extractedRole;
+        localStorage.setItem('role', extractedRole); // 更新存储
+        userProfile.value = { 
+            id: userIdFromToken || null,
+            username: username.value, 
+            role: role.value.toUpperCase() 
+        }; 
+        console.log(`[UserStore] Using fallback info during init: User=${username.value}, Role=${role.value}, ID from token=${userIdFromToken || 'Not Found'}`);
+      }
+      // 如果 profile 获取成功，fetchUserProfile 内部已经设置了 isLoggedIn
+      
     } else {
-        console.log("[UserStore] No token found in localStorage.");
-        // 确保未登录状态被正确设置
-        await logout(false); 
+        console.log("[UserStore] No token found in localStorage during init.");
+        await logout(false); // 确保是登出状态
     }
     isInitialized.value = true; // 标记初始化完成
     console.log("[UserStore] Initialization complete. isLoggedIn:", isLoggedIn.value, "Role:", role.value);
