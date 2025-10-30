@@ -14,12 +14,14 @@ export default defineConfig({
     proxy: {
       // 统一以 /api 开头发起请求
       '/api': {
-        target: 'http://13.215.158.65:10016',   // 你的后端网关/微服务入口
+        // [MODIFIED] 更新为你的新后端服务地址
+        target: 'http://52.77.254.95:10015',
         changeOrigin: true,
         secure: false,
         // 你的后端 Controller 是以 /auth /user /product/... 开头，没有 /api 前缀
         // 因此需要把 "/api" 前缀去掉
-        //rewrite: (path) => path.replace(/^\/api/, ''),
+        // [NOTE] 保持注释状态。根据你的 API 列表，后端似乎确实需要 /api 前缀。
+        // rewrite: (path) => path.replace(/^\/api/, ''),
         // 可选：看见代理日志（排查超好用）
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {

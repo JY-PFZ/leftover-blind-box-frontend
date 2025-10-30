@@ -6,47 +6,51 @@
 
       <form @submit.prevent="onSubmit" class="form">
         <input
-          v-model.trim="form.email"
+          v-model.trim="username"
           type="email"
           placeholder="Email"
           required
         />
         <input
-          v-model.trim="form.password"
+          v-model.trim="password"
           type="password"
-          placeholder="Password"
+          placeholder="Password (min. 6 characters)"
           minlength="6"
           required
         />
-        <input
-          v-model.trim="form.confirmPassword"
-          type="password"
-          placeholder="Confirm Password"
-          minlength="6"
-          required
-        />
-        <select v-model="form.role" required>
-          <option value="" disabled>Select Role</option>
-          <option value="customer">Customer</option>
-          <option value="merchant">Merchant</option>
+
+        <select v-model="role" required>
+          <option value="CUSTOMER">Sign up as a Customer</option>
+          <option value="MERCHANT">Sign up as a Merchant</option>
         </select>
 
-        <!-- 商家专属字段 -->
-        <div v-if="form.role === 'merchant'" class="merchant-fields">
-          <input v-model.trim="form.shopName" type="text" placeholder="Shop Name" required />
-          <input v-model.trim="form.phone" type="tel" placeholder="Phone Number" required />
-          <input v-model.trim="form.address" type="text" placeholder="Address" required />
-          <div class="location-group">
-            <button type="button" @click="getLocation" :disabled="locationLoading">
-              {{ locationLoading ? 'Getting...' : 'Get Current Location' }}
-            </button>
-            <span v-if="form.latitude && form.longitude" class="location-display">
-              📍 Acquired
-            </span>
-          </div>
+        <!-- 🟢 [ADDED] 商家专属字段 -->
+        <div v-if="role === 'MERCHANT'" class="merchant-fields">
+          <hr class="divider" />
+          <p class="merchant-title">Merchant Details</p>
+          <input
+            v-model.trim="merchantName"
+            type="text"
+            placeholder="Merchant Name"
+            :required="role === 'MERCHANT'"
+          />
+          <input
+            v-model.trim="address"
+            type="text"
+            placeholder="Address"
+            :required="role === 'MERCHANT'"
+          />
+          <!-- 坐标获取 -->
+          <button type="button" class="location-btn" @click="getLocation" :disabled="loadingLocation">
+            {{ locationStatus }}
+          </button>
+          <p class="location-coords" v-if="latitude && longitude">
+            Lat: {{ latitude.toFixed(4) }}, Lon: {{ longitude.toFixed(4) }}
+          </p>
         </div>
+        <!-- 🟢 结束 商家专属字段 -->
 
-        <button class="primary" :disabled="loading">
+        <button class="primary" :disabled="loading || (role === 'MERCHANT' && loadingLocation)">
           {{ loading ? 'Signing up…' : 'Sign Up' }}
         </button>
         <button class="ghost" type="button" @click="$emit('close')" :disabled="loading">
@@ -61,107 +65,201 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { api } from '@/utils/api';
-// **核心修复：不再需要 JSEncrypt**
-// import { JSEncrypt } from 'jsencrypt';
+import { ref } from 'vue';
+import { useUserStore } from '@/stores/user';
+import { useMerchantStore } from '@/stores/merchant'; // 🟢 [ADDED] 导入 merchant store
 
 const emit = defineEmits(['close']);
+const userStore = useUserStore();
+const merchantStore = useMerchantStore(); // 🟢 [ADDED]
 
-const form = reactive({
-  email: '',
-  password: '',
-  confirmPassword: '',
-  role: '',
-  shopName: '',
-  phone: '',
-  address: '',
-  latitude: null,
-  longitude: null,
-});
-
+const username = ref(''); // (Email)
+const password = ref('');
+const role = ref('CUSTOMER');
 const loading = ref(false);
-const locationLoading = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
 
-const getLocation = () => {
+// 🟢 [ADDED] 商家注册所需的新状态
+const merchantName = ref('');
+const address = ref('');
+const latitude = ref(null);
+const longitude = ref(null);
+const loadingLocation = ref(false);
+const locationStatus = ref('📍 Get Store Location');
+
+// 🟢 [ADDED] 获取地理位置的函数
+const getLocation = async () => {
   if (!navigator.geolocation) {
-    errorMsg.value = "Geolocation is not supported by your browser.";
+    locationStatus.value = 'Geolocation is not supported.';
     return;
   }
-  locationLoading.value = true;
+  loadingLocation.value = true;
+  locationStatus.value = 'Getting location...';
+  errorMsg.value = '';
+
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      form.latitude = position.coords.latitude;
-      form.longitude = position.coords.longitude;
-      locationLoading.value = false;
+      latitude.value = position.coords.latitude;
+      longitude.value = position.coords.longitude;
+      locationStatus.value = '✅ Location Acquired';
+      loadingLocation.value = false;
     },
-    () => {
-      errorMsg.value = "Unable to retrieve your location.";
-      locationLoading.value = false;
+    (err) => {
+      console.error("Error getting location:", err);
+      locationStatus.value = 'Failed. Click to retry.';
+      errorMsg.value = 'Failed to get location. Please check browser permissions.';
+      loadingLocation.value = false;
+      latitude.value = null; // 确保失败时清空
+      longitude.value = null;
     }
   );
 };
 
+// 🟢 [UPDATED] 提交逻辑
 const onSubmit = async () => {
   errorMsg.value = '';
   successMsg.value = '';
-
-  if (form.password !== form.confirmPassword) {
-    errorMsg.value = 'Passwords do not match.';
-    return;
-  }
-  if (!form.role) {
-    errorMsg.value = 'Please select a role.';
-    return;
-  }
-  
   loading.value = true;
   
-  try {
-    // **核心修复：直接发送原始密码**
-    const payload = {
-      username: form.email,
-      password: form.password, // 直接使用原始密码
-      role: form.role.toUpperCase(),
-      // 商家专属字段
-      name: form.shopName,
-      phone: form.phone,
-      address: form.address,
-      latitude: form.latitude,
-      longitude: form.longitude,
-    };
-    
-    await api.post('/user/register', payload);
-    
-    successMsg.value = '✅ Registration successful! An activation email has been sent. Please check your inbox.';
+  let res;
+  if (role.value === 'CUSTOMER') {
+    // --- 顾客注册 ---
+    res = await userStore.register(username.value, password.value, role.value);
+  } else {
+    // --- 商家注册 ---
+    // 检查是否已获取坐标
+    if (!latitude.value || !longitude.value) {
+      errorMsg.value = 'Please acquire store location before signing up.';
+      loading.value = false;
+      return;
+    }
+    // 调用 merchantStore 的新函数
+    res = await merchantStore.registerMerchant({
+      username: username.value,
+      password: password.value,
+      merchantName: merchantName.value,
+      address: address.value,
+      latitude: latitude.value,
+      longitude: longitude.value
+    });
+  }
+  
+  loading.value = false;
+
+  if (res.success) {
+    // 根据角色显示不同成功信息
+    if (role.value === 'MERCHANT') {
+      successMsg.value = '✅ Registration pending approval! You can now log in.';
+    } else {
+      successMsg.value = '✅ Registration Successful! Please log in.';
+    }
     
     setTimeout(() => {
       emit('close');
-    }, 3000);
-    
-  } catch (error) {
-    const message = error.response?.data?.message || error.message || 'Registration failed.';
-    errorMsg.value = `FAIL: ${message}`;
-  } finally {
-    loading.value = false;
+      userStore.showLoginModal = true; // 注册成功后自动打开登录框
+    }, 2000); // 停留2秒显示成功信息
+  } else {
+    errorMsg.value = res.message || 'Registration failed';
   }
 };
 </script>
 
 <style scoped>
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: grid; place-items: center; z-index: 1001; }
-.modal { width: 380px; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
-.form { display: grid; gap: 12px; }
-input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 100%; }
-.primary { padding: 10px; border: none; border-radius: 8px; background: #007bff; color: #fff; cursor: pointer; }
-.ghost { padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; }
-.error { color: #e74c3c; font-size: 13px; }
-.success { color: #27ae60; font-size: 13px; font-weight: 500; }
-.merchant-fields { display: grid; gap: 12px; border-top: 1px solid #eee; padding-top: 12px; margin-top: 5px; }
-.location-group { display: flex; align-items: center; gap: 10px; }
-.location-group button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; background-color: #f0f0f0; }
-.location-display { font-size: 13px; color: #27ae60; font-weight: 500; }
-</style>
+/* (大部分样式保持不变) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  display: grid;
+  place-items: center;
+  z-index: 1001;
+}
+.modal {
+  width: 360px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+}
+.form {
+  display: grid;
+  gap: 10px;
+}
+input, select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+}
+.primary {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #28a745;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+.ghost {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.primary:disabled {
+  background: #aaa;
+}
+.error {
+  color: #e74c3c;
+  font-size: 13px;
+}
+.success {
+  color: #27ae60;
+  font-size: 13px;
+  font-weight: 500;
+}
 
+/* 🟢 [ADDED] 商家字段样式 */
+.merchant-fields {
+  display: grid;
+  gap: 10px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 4px 0;
+}
+.merchant-title {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: -4px;
+}
+.location-btn {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f9f9f9;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.location-btn:hover {
+  background: #f0f0f0;
+}
+.location-btn:disabled {
+  background: #e0e0e0;
+  cursor: not-allowed;
+  color: #777;
+}
+.location-coords {
+  font-size: 12px;
+  color: #007bff;
+  text-align: center;
+  margin-top: -6px;
+  margin-bottom: 4px;
+}
+</style>

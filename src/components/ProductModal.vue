@@ -94,182 +94,329 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, watchEffect } from 'vue'
-import { RouterLink } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import Modal from './Modal.vue'
-import { useCartStore } from '@/stores/cart'
-import { useUserStore } from '@/stores/user'
-import { getMerchantDistance, formatDistance } from '@/utils/geoUtils'
+import { computed, ref, watch, watchEffect } from 'vue';
+import { RouterLink } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import Modal from './Modal.vue';
+import { useUserStore } from '@/stores/user';
+import { getMerchantDistance, formatDistance } from '@/utils/geoUtils';
 
 const props = defineProps({
   open: { type: Boolean, default: false },
   product: { type: Object, required: true }
-})
-const emit = defineEmits(['close'])
-const cart = useCartStore()
-const user = useUserStore()
-const { userLocation } = storeToRefs(user)
+});
+const emit = defineEmits(['close', 'add-to-cart']);
+const user = useUserStore();
+const { userLocation } = storeToRefs(user);
 
-/* 图片集合处理 */
 const images = computed(() => {
-  const arr = []
-  if (props.product?.image) arr.push(props.product.image)
-  if (Array.isArray(props.product?.images)) arr.push(...props.product.images)
-  return arr
-})
-const activeIndex = ref(0)
-const activeImage = computed(()=> images.value[activeIndex.value] || '')
+  const arr = [];
+  if (props.product?.imageUrl) arr.push(props.product.imageUrl);
+  if (Array.isArray(props.product?.images)) arr.push(...props.product.images);
+  return arr;
+});
+const activeIndex = ref(0);
+const activeImage = computed(() => images.value[activeIndex.value] || '');
 
-/* 角标、评分、价格逻辑 */
-const badge = computed(()=> props.product?.badge || '')
-const rating = computed(()=> props.product?.rating || props.product?.merchant?.rating || 0)
-const priceNow = computed(()=> Number(props.product?.price || 0).toFixed(2))
-const priceOld = computed(()=> Number(props.product?.originalPrice || 0).toFixed(2))
+const badge = computed(() => props.product?.badge || '');
+const rating = computed(() => props.product?.rating || props.product?.merchant?.rating || 0);
+const priceNow = computed(() => Number(props.product?.price || 0).toFixed(2));
+const priceOld = computed(() => Number(props.product?.originalPrice || 0).toFixed(2));
 
-/* 距离计算 */
 const merchantDistance = computed(() => {
-  console.log('ProductModal distance calculation:', {
-    product: props.product,
-    merchant: props.product?.merchant,
-    userLocation: userLocation.value,
-    hasMerchant: !!props.product?.merchant,
-    hasUserLocation: !!userLocation.value
-  })
-  
-  // 检查用户位置是否存在
   if (!props.product?.merchant || !userLocation.value) {
-    console.log('Missing merchant or userLocation')
-    return null
+    return null;
   }
-  
-  const distance = getMerchantDistance(props.product.merchant, userLocation.value)
-  console.log('Calculated distance:', distance)
-  
-  return distance ? formatDistance(distance) : null
-})
+  const distance = getMerchantDistance(props.product.merchant, userLocation.value);
+  return distance ? formatDistance(distance) : null;
+});
 
-/* 规格与数量控制 */
-const variants = computed(()=> props.product?.variants ?? [])
-const selectedVariant = ref(variants.value[0] || null)
-const qty = ref(1)
-function inc(){ qty.value++ }
-function dec(){ if(qty.value>1) qty.value-- }
-watch(()=>props.open, o => { if(o){ qty.value=1; activeIndex.value=0 } })
+const variants = computed(() => props.product?.variants ?? []);
+const selectedVariant = ref(variants.value[0] || null);
+const qty = ref(1);
+function inc() { qty.value++; }
+function dec() { if (qty.value > 1) qty.value--; }
+watch(() => props.open, o => { if (o) { qty.value = 1; activeIndex.value = 0; } });
 
-// 监听用户位置变化，确保距离计算更新
 watchEffect(() => {
   if (props.open && props.product?.merchant && userLocation.value) {
-    console.log('ProductModal: User location changed, recalculating distance')
+    // console.log('ProductModal: User location changed, recalculating distance')
   }
-})
+});
 
-// 监听模态框打开，确保用户位置已获取
 watch(() => props.open, async (isOpen) => {
   if (isOpen && !userLocation.value) {
-    console.log('ProductModal: Modal opened but no user location, fetching...')
-    await user.fetchUserLocation()
+    console.log('ProductModal: Modal opened but no user location, fetching...');
+    await user.getUserLocation();
   }
-})
+});
 
-/* 购物车与购买交互 */
-function addToCart(){
-  const payload = { ...props.product, selectedVariant: selectedVariant.value }
-  cart.add(payload, qty.value)
+function addToCart() {
+  emit('add-to-cart', props.product, qty.value);
 }
-function buyNow(){
-  addToCart()
-  emit('close')
-  // 可后续补充跳转结算页逻辑
+function buyNow() {
+  addToCart();
+  emit('close');
 }
 </script>
 
 <style scoped>
-/* 外层结构视觉 */
-.pm{ position:relative; }
-.ribbon{
-  height:8px;
-  background: linear-gradient(90deg,#ff9a9e,#fad0c4,#fbc2eb,#a1c4fd);
+.pm {
+  position: relative;
 }
-.body{ display:grid; grid-template-columns: 1.2fr .8fr; gap:22px; padding:20px; }
-@media (max-width: 920px){ .body{ grid-template-columns:1fr; } }
+.ribbon {
+  height: 8px;
+  background: linear-gradient(90deg, #ff9a9e, #fad0c4, #fbc2eb, #a1c4fd);
+}
+.body {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 22px;
+  padding: 20px;
+}
+@media (max-width: 920px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
 
-/* 媒体区：主图+缩略图 */
-.media{}
-.main{
-  position:relative; height:380px; border-radius:16px; overflow:hidden;
-  background:linear-gradient(135deg,#ffd2d2,#e2b6ff);
-  box-shadow:0 10px 28px rgba(211,47,47,.12);
+.media {}
+.main {
+  position: relative;
+  height: 380px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffd2d2, #e2b6ff);
+  box-shadow: 0 10px 28px rgba(211, 47, 47, .12);
 }
-.main img{ width:100%; height:100%; object-fit:cover; display:block; }
-.fallback{ width:100%; height:100%; background:linear-gradient(135deg,#9dd1ff,#f6a4ff); }
-.badge{
-  position:absolute; top:12px; left:12px;
-  background:#d32f2f; color:#fff; font-weight:800; padding:6px 10px;
-  border-radius:999px; font-size:12px; box-shadow:0 4px 14px rgba(211,47,47,.35);
+.main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-.thumbs{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
-.thumb{
-  width:68px; height:68px; border-radius:10px; overflow:hidden; padding:0; border:none; cursor:pointer;
-  outline:2px solid transparent; transition:outline-color .15s;
-  background:#fff;
+.fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #9dd1ff, #f6a4ff);
 }
-.thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-.thumb.active,.thumb:hover{ outline-color:#ff9800; }
+.badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #d32f2f;
+  color: #fff;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  box-shadow: 0 4px 14px rgba(211, 47, 47, .35);
+}
+.thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.thumb {
+  width: 68px;
+  height: 68px;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  transition: outline-color .15s;
+  background: #fff;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.thumb.active,
+.thumb:hover {
+  outline-color: #ff9800;
+}
 
-/* 信息区：排版与交互 */
-.info{ display:flex; flex-direction:column; gap:14px; }
-.title{ font:800 24px/1.2 system-ui,-apple-system,Segoe UI,Roboto; color:#231f20; margin:0; }
-.subrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.price .now{ color:#d32f2f; font-weight:900; font-size:20px; }
-.price .old{ color:#9b9b9b; text-decoration:line-through; font-weight:700; margin-left:8px; }
-.rating{ color:#555; font-weight:800; }
-.star{ color:#f59e0b; margin-right:4px; }
-.desc{ color:#4a4a4a; line-height:1.65; }
-
-/* 商家卡片：信任背书 */
-.merchant{
-  display:flex; align-items:center; gap:12px; background:#fff;
-  border-radius:12px; padding:10px 12px; box-shadow:0 4px 14px rgba(0,0,0,.06);
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
-.avatar{ width:42px; height:42px; border-radius:10px; object-fit:cover; }
-.meta{ flex:1; }
-.m-name{ font-weight:800; }
-.m-sub{ color:#777; font-size:12px; margin-top:2px; }
-.distance{ color:#3b82f6; font-weight:600; }
-.shop{
-  text-decoration:none; background:#ff9800; color:#fff; font-weight:900; padding:8px 12px;
-  border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.06); transition: background .2s, transform .06s;
+.title {
+  font: 800 24px/1.2 system-ui, -apple-system, Segoe UI, Roboto;
+  color: #231f20;
+  margin: 0;
 }
-.shop:hover{ background:#e68900; }
-.shop:active{ transform:translateY(1px) scale(.99); }
-
-/* 规格选择：视觉反馈 */
-.variants{}
-.label{ color:#7a7a7a; font-size:12px; margin-bottom:6px; }
-.pills{ display:flex; gap:8px; flex-wrap:wrap; }
-.pill{
-  border:none; padding:8px 12px; border-radius:999px; cursor:pointer;
-  background:#f5f5f5; color:#333; font-weight:700; font-size:12px;
+.subrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
-.pill.active,.pill:hover{ background:#111827; color:#fff; }
+.price .now {
+  color: #d32f2f;
+  font-weight: 900;
+  font-size: 20px;
+}
+.price .old {
+  color: #9b9b9b;
+  text-decoration: line-through;
+  font-weight: 700;
+  margin-left: 8px;
+}
+.rating {
+  color: #555;
+  font-weight: 800;
+}
+.star {
+  color: #f59e0b;
+  margin-right: 4px;
+}
+.desc {
+  color: #4a4a4a;
+  line-height: 1.65;
+}
 
-/* 数量控制：易用性 */
-.qty{ display:flex; align-items:center; gap:12px; }
-.stepper{ display:flex; align-items:center; background:#fff; border-radius:10px; overflow:hidden;
-  box-shadow:0 2px 10px rgba(0,0,0,.06); }
-.stepper button{ width:34px; height:34px; border:none; background:#f3f4f6; cursor:pointer; font-weight:900; font-size:16px; }
-.stepper input{ width:56px; height:34px; border:none; text-align:center; font-weight:800; font-size:14px; outline:none; }
+.merchant {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+}
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.meta {
+  flex: 1;
+}
+.m-name {
+  font-weight: 800;
+}
+.m-sub {
+  color: #777;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.distance {
+  color: #3b82f6;
+  font-weight: 600;
+}
+.shop {
+  text-decoration: none;
+  background: #ff9800;
+  color: #fff;
+  font-weight: 900;
+  padding: 8px 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+  transition: background .2s, transform .06s;
+}
+.shop:hover {
+  background: #e68900;
+}
+.shop:active {
+  transform: translateY(1px) scale(.99);
+}
 
-/* 行动按钮：视觉层级 */
-.actions{ display:flex; gap:10px; margin-top:auto; }
-.btn{
-  border:none; border-radius:12px; padding:12px 16px; cursor:pointer; font-weight:900; letter-spacing:.2px; font-size:14px;
+.variants {}
+.label {
+  color: #7a7a7a;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pill {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #333;
+  font-weight: 700;
+  font-size: 12px;
+}
+.pill.active,
+.pill:hover {
+  background: #111827;
+  color: #fff;
+}
+
+.qty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+}
+.stepper button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: #f3f4f6;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 16px;
+}
+.stepper input {
+  width: 56px;
+  height: 34px;
+  border: none;
+  text-align: center;
+  font-weight: 800;
+  font-size: 14px;
+  outline: none;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 900;
+  letter-spacing: .2px;
+  font-size: 14px;
   transition: transform .06s, filter .06s, background .2s;
 }
-.btn:active{ transform: translateY(1px) scale(.99); }
-.btn.add{ background:#22c55e; color:#fff; }
-.btn.add:hover{ filter:brightness(1.05) }
-.btn.buy{ background:#d32f2f; color:#fff; }
-.btn.buy:hover{ filter:brightness(1.05) }
+.btn:active {
+  transform: translateY(1px) scale(.99);
+}
+.btn.add {
+  background: #22c55e;
+  color: #fff;
+}
+.btn.add:hover {
+  filter: brightness(1.05)
+}
+.btn.buy {
+  background: #d32f2f;
+  color: #fff;
+}
+.btn.buy:hover {
+  filter: brightness(1.05)
+}
 </style>

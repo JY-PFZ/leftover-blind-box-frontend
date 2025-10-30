@@ -48,7 +48,7 @@ export const useOrderStore = defineStore('order', () => {
     try {
       console.log("[OrderStore] Fetching orders with params:", queryParams);
       // 使用正确的 API 路径
-      const response = await api.get('/api/orders', { params: queryParams });
+      const response = await api.get('/api/order', { params: queryParams });
 
       // 后端返回的数据结构是 Result<IPage<OrderDto>>
       // 🟢 修正：使用宽松相等 (==) 检查 code，以兼容数字或字符串形式的 20000
@@ -100,7 +100,7 @@ export const useOrderStore = defineStore('order', () => {
     
     try {
       console.log(`[OrderStore] Updating order ${orderId} to status: ${status}`);
-      const response = await api.put(`/api/orders/${orderId}/status`, {
+      const response = await api.put(`/api/order/${orderId}/status`, {
         status: status,
         remark: remark
       });
@@ -132,7 +132,7 @@ export const useOrderStore = defineStore('order', () => {
     
     try {
       console.log(`[OrderStore] Cancelling order ${orderId}`);
-      const response = await api.put(`/api/orders/${orderId}/cancel`);
+      const response = await api.put(`/api/order/${orderId}/cancel`);
       
       if (response.data?.code == 20000) {
         console.log(`[OrderStore] Order ${orderId} cancelled successfully`);
@@ -162,7 +162,7 @@ export const useOrderStore = defineStore('order', () => {
     
     try {
       console.log(`[OrderStore] Verifying order ${orderId}`, verificationData);
-      const response = await api.post(`/api/orders/${orderId}/verify`, {
+      const response = await api.post(`/api/order/${orderId}/verify`, {
         orderId: orderId,
         location: verificationData.location || 'Store Front',
         verifierName: verificationData.verifierName || 'Merchant'

@@ -16,10 +16,9 @@
     <div class="container">
       <!-- 加载状态 -->
       <div v-if="cart.isLoading && (!cart.items || cart.items.length === 0)" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading your cart...</p>
+        <div class="spinner"></div>
+        <p>Loading your cart...</p>
       </div>
-
 
       <!-- 空购物车状态 -->
       <div v-else-if="!cart.items || cart.items.length === 0" class="empty-cart">
@@ -32,13 +31,11 @@
       </div>
 
       <!-- 购物车商品列表 -->
-      <!-- 使用 lastUpdated 作为 key 来强制刷新 -->
-      <div v-else class="cart-content" :key="cart.lastUpdated">
+      <div v-else class="cart-content">
         <div class="cart-items">
-          <!-- 🟢 修正 key: 使用 item.magicBagId (大写 B) -->
           <div
             v-for="(item, index) in cart.items"
-            :key="item.magicBagId || index" 
+            :key="item.magicbagId || index"
             class="cart-item"
           >
             <!-- 商品图片 -->
@@ -50,15 +47,12 @@
 
             <!-- 商品信息 -->
             <div class="item-info">
-              <!-- 使用 bagName -->
               <h3 class="item-title">{{ item.bagName }}</h3>
               <p class="item-price">${{ (item.price || 0).toFixed(2) }}</p>
-              <!-- 🟢 修正 v-if: 使用 item.magicBagId (大写 B) -->
-              <p v-if="item.magicBagId" class="item-merchant">
-                MagicBag ID: {{ item.magicBagId }}
+              <p v-if="item.magicbagId" class="item-merchant">
+                MagicBag ID: {{ item.magicbagId }}
               </p>
-              <!-- 🟢 修正 v-if: 使用 !item.magicBagId (大写 B) -->
-              <p v-if="!item.magicBagId" class="item-invalid-warning">
+              <p v-if="!item.magicbagId" class="item-invalid-warning">
                 ⚠️ Item data is invalid (Missing ID).
               </p>
             </div>
@@ -68,16 +62,16 @@
               <div class="quantity-control">
                 <button
                   class="qty-btn"
-                  @click="updateQuantity(item.magicBagId, item.quantity - 1)"
-                  :disabled="cart.isLoading || !item.magicBagId || item.quantity <= 1"
+                  @click="updateQuantity(item.magicbagId, item.quantity - 1)"
+                  :disabled="cart.isLoading || !item.magicbagId || item.quantity <= 1"
                 >
                   −
                 </button>
                 <span class="quantity">{{ item.quantity }}</span>
                 <button
                   class="qty-btn"
-                  @click="updateQuantity(item.magicBagId, item.quantity + 1)"
-                  :disabled="cart.isLoading || !item.magicBagId"
+                  @click="updateQuantity(item.magicbagId, item.quantity + 1)"
+                  :disabled="cart.isLoading || !item.magicbagId"
                 >
                   +
                 </button>
@@ -85,8 +79,8 @@
 
               <button
                 class="remove-btn"
-                @click="removeItem(item.magicBagId)"
-                :disabled="cart.isLoading || !item.magicBagId"
+                @click="removeItem(item.magicbagId)"
+                :disabled="cart.isLoading || !item.magicbagId"
                 title="Remove item"
               >
                 🗑️ Remove
@@ -95,7 +89,6 @@
 
             <!-- 小计 -->
             <div class="item-subtotal">
-              <!-- 使用 subtotal -->
               ${{ (item.subtotal || 0).toFixed(2) }}
             </div>
           </div>
@@ -107,7 +100,6 @@
             <h3>Order Summary</h3>
 
             <div class="summary-row">
-              <!-- 使用 items.length -->
               <span>Subtotal ({{ cart.items.length }} items):</span>
               <span>${{ (cart.total || 0).toFixed(2) }}</span>
             </div>
@@ -149,11 +141,9 @@
         <div class="order-summary">
           <h3>Order Summary</h3>
           <div class="summary-items">
-            <div v-for="item in cart.items" :key="item.magicBagId" class="summary-item">
-              <!-- 使用 bagName -->
+            <div v-for="item in cart.items" :key="item.magicbagId" class="summary-item">
               <span class="item-name">{{ item.bagName }}</span>
               <span class="item-qty">×{{ item.quantity }}</span>
-              <!-- 使用 subtotal -->
               <span class="item-price">${{ (item.subtotal || 0).toFixed(2) }}</span>
             </div>
           </div>
@@ -199,87 +189,77 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue' 
-import { useRouter, RouterLink } from 'vue-router' // 🟢 导入 RouterLink
-import { useCartStore } from '@/stores/cart'
-import { useUserStore } from '@/stores/user'
-import { api } from '@/utils/api' 
+import { ref, onMounted, watch, nextTick } from 'vue';
+import { useRouter, RouterLink } from 'vue-router';
+import { useCartStore } from '@/stores/cart';
+import { useUserStore } from '@/stores/user';
+import { api } from '@/utils/api';
 
-const cart = useCartStore()
-const user = useUserStore()
-const router = useRouter()
+const cart = useCartStore();
+const user = useUserStore();
+const router = useRouter();
 
-// Debug Watcher (保持不变)
+// Debug Watcher
 watch(() => cart.items, (newItems) => {
   console.log('[CartView Debug] cart.items changed!');
   nextTick(() => {
     console.log('[CartView Debug] Reading items in nextTick:', JSON.parse(JSON.stringify(cart.items)));
     if (Array.isArray(cart.items)) {
       cart.items.forEach((item, index) => {
-        // 🟢 修正 Debug Log: 使用 item.magicBagId (大写 B)
-        console.log(`[CartView Debug] Item ${index} (in nextTick):`, JSON.parse(JSON.stringify(item)), 'Has magicBagId (B):', item && item.hasOwnProperty('magicBagId'), 'Value (B):', item ? item.magicBagId : 'item is null/undefined');
+        console.log(`[CartView Debug] Item ${index} (in nextTick):`, JSON.parse(JSON.stringify(item)), 'Has magicbagId (b):', item && item.hasOwnProperty('magicbagId'), 'Value (b):', item ? item.magicbagId : 'item is null/undefined');
       });
     }
   });
-}, { deep: true, immediate: true }); 
+}, { deep: true, immediate: true });
 
-
-// 页面加载时自动获取购物车
 onMounted(() => {
   if (user.isLoggedIn) {
-    cart.fetchCart()
+    cart.fetchCart();
   }
-})
+});
 
-// 更新商品数量
-async function updateQuantity(magicBagId, newQty) { // 🟢 参数名改为 magicBagId (大写 B)
-  if (!magicBagId) { // 🟢 检查 magicBagId
-    console.error("updateQuantity called with invalid magicBagId:", magicBagId);
+async function updateQuantity(magicbagId, newQty) {
+  if (!magicbagId) {
+    console.error("updateQuantity called with invalid magicbagId:", magicbagId);
     return;
   }
-  await cart.updateItemQuantity(magicBagId, newQty); // 🟢 传递 magicBagId
+  await cart.updateItemQuantity(magicbagId, newQty);
 }
 
-// 删除商品
-async function removeItem(magicBagId) { // 🟢 参数名改为 magicBagId (大写 B)
-  if (!magicBagId) { // 🟢 检查 magicBagId
-    console.error("removeItem called with invalid magicBagId:", magicBagId);
+async function removeItem(magicbagId) {
+  if (!magicbagId) {
+    console.error("removeItem called with invalid magicbagId:", magicbagId);
     return;
   }
-  await cart.removeItemFromCart(magicBagId); // 🟢 传递 magicBagId
+  await cart.removeItemFromCart(magicbagId);
 }
 
-// 清空购物车
 async function clearCart() {
   await cart.clearServerCart();
 }
 
-// --- 结算与支付 ---
-
-const showPaymentModal = ref(false)
-const selectedPayment = ref('mock') 
-const isProcessing = ref(false)
+const showPaymentModal = ref(false);
+const selectedPayment = ref('mock');
+const isProcessing = ref(false);
 
 function checkout() {
   if (!user.isLoggedIn) {
     window.dispatchEvent(new Event('open-login'));
     return;
   }
-  if (!cart.items || cart.items.length === 0) { 
+  if (!cart.items || cart.items.length === 0) {
     console.warn('Cart is empty, cannot proceed to checkout.');
-    alert('Your cart is empty!'); 
+    alert('Your cart is empty!');
     return;
   }
   showPaymentModal.value = true;
 }
 
-
 function closePaymentModal() {
-  showPaymentModal.value = false
-  isProcessing.value = false
+  showPaymentModal.value = false;
+  isProcessing.value = false;
 }
 
-// 处理支付并创建订单
 async function processPayment() {
   if (!selectedPayment.value) return;
 
@@ -287,20 +267,19 @@ async function processPayment() {
 
   try {
     console.log("Simulating payment processing...");
-    await new Promise(resolve => setTimeout(resolve, 500)); 
+    await new Promise(resolve => setTimeout(resolve, 500));
     console.log("Mock payment successful.");
 
     console.log("Attempting to create order from cart via API...");
-    const response = await api.post('/api/orders/from-cart'); 
+    const response = await api.post('/api/order/from-cart');
 
-    // 使用正确的成功 code 判断
     if (response.data?.code == 20000 && response.data?.data) {
       const newOrder = response.data.data;
       console.log("✅ Order created successfully via API:", newOrder);
 
-      await cart.fetchCart(); 
+      await cart.fetchCart();
       closePaymentModal();
-      router.push('/order-history'); 
+      router.push('/order-history');
 
     } else {
       console.error("❌ Failed to create order via API:", response.data);
@@ -317,35 +296,39 @@ async function processPayment() {
 </script>
 
 <style scoped>
-/* --- 省略样式 --- */
 .loading-state {
   text-align: center;
   padding: 80px 20px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
+
 .spinner {
-  border: 4px solid rgba(0,0,0,0.1);
+  border: 4px solid rgba(0, 0, 0, 0.1);
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border-left-color: #09f; /* 或其他主题色 */
+  border-left-color: #09f;
   animation: spin 1s ease infinite;
   margin: 0 auto 20px;
 }
+
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.item-invalid-warning { /* Renamed from item-error-notice for clarity */
+.item-invalid-warning {
   color: #e74c3c;
-  font-size: 0.9em; /* Slightly larger */
+  font-size: 0.9em;
   margin-top: 4px;
   font-weight: 500;
 }
-
 
 .cart-page {
   min-height: 100vh;
@@ -382,7 +365,7 @@ async function processPayment() {
   padding: 80px 20px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .empty-icon {
@@ -423,12 +406,12 @@ async function processPayment() {
   padding: 20px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.2s;
 }
 
 .cart-item:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .item-image {
@@ -439,7 +422,7 @@ async function processPayment() {
 .image-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #ff9a9e, #fecfef); /* 示例渐变 */
+  background: linear-gradient(135deg, #ff9a9e, #fecfef);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -448,7 +431,7 @@ async function processPayment() {
 }
 
 .item-info {
-  min-width: 0; /* Prevents overflow */
+  min-width: 0;
 }
 
 .item-title {
@@ -461,7 +444,7 @@ async function processPayment() {
 .item-price {
   margin: 0 0 4px 0;
   font-size: 16px;
-  color: #e74c3c; /* Red color for price */
+  color: #e74c3c;
   font-weight: 600;
 }
 
@@ -470,7 +453,6 @@ async function processPayment() {
   font-size: 14px;
   color: #666;
 }
-
 
 .item-controls {
   display: flex;
@@ -500,7 +482,7 @@ async function processPayment() {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
 }
 
@@ -524,7 +506,7 @@ async function processPayment() {
 .remove-btn {
   padding: 8px 16px;
   border: none;
-  background: #ff6b6b; /* Softer red */
+  background: #ff6b6b;
   color: white;
   border-radius: 6px;
   cursor: pointer;
@@ -537,12 +519,12 @@ async function processPayment() {
   background: #ff5252;
   transform: scale(1.02);
 }
+
 .remove-btn:disabled {
-  background: #f8d7da; /* Slightly lighter red when disabled */
+  background: #f8d7da;
   cursor: not-allowed;
   opacity: 0.7;
 }
-
 
 .item-subtotal {
   font-weight: bold;
@@ -554,14 +536,14 @@ async function processPayment() {
 
 .cart-summary-section {
   position: sticky;
-  top: 20px; /* Adjust as needed for header height */
+  top: 20px;
 }
 
 .summary-card {
   background: white;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .summary-card h3 {
@@ -580,7 +562,7 @@ async function processPayment() {
 .total-row {
   font-size: 18px;
   font-weight: bold;
-  color: #e74c3c; /* Match item price color */
+  color: #e74c3c;
   border-top: 1px solid #eee;
   padding-top: 12px;
   margin-top: 12px;
@@ -593,7 +575,8 @@ async function processPayment() {
   margin-top: 24px;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   padding: 14px 24px;
   border: none;
   border-radius: 8px;
@@ -603,72 +586,67 @@ async function processPayment() {
   transition: all 0.2s;
   text-decoration: none;
   text-align: center;
-  display: inline-block; /* Or block if they should take full width */
+  display: inline-block;
 }
 
 .btn-primary {
-  background: #22c55e; /* Green */
+  background: #22c55e;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #16a34a; /* Darker green */
+  background: #16a34a;
   transform: translateY(-1px);
 }
+
 .btn-primary:disabled {
-    background-color: #a7f3d0; /* Lighter green */
-    cursor: not-allowed;
-    opacity: 0.7;
+  background-color: #a7f3d0;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .btn-secondary {
-  background: #6b7280; /* Gray */
+  background: #6b7280;
   color: white;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #4b5563; /* Darker gray */
+  background: #4b5563;
   transform: translateY(-1px);
 }
+
 .btn-secondary:disabled {
-    background-color: #d1d5db; /* Lighter gray */
-    cursor: not-allowed;
-    opacity: 0.7;
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .cart-content {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-
   .cart-item {
-    grid-template-columns: 80px 1fr; /* Image, Info */
+    grid-template-columns: 80px 1fr;
     gap: 16px;
   }
-
-  /* Make controls and subtotal span full width below info */
   .item-controls {
-    grid-column: 1 / -1; /* Span all columns */
+    grid-column: 1 / -1;
     flex-direction: row;
     justify-content: space-between;
     margin-top: 12px;
   }
-
   .item-subtotal {
-    grid-column: 1 / -1; /* Span all columns */
+    grid-column: 1 / -1;
     text-align: left;
     margin-top: 12px;
-    font-size: 16px; /* Slightly smaller on mobile */
+    font-size: 16px;
   }
-
   .checkout-actions {
     flex-direction: column;
   }
 }
 
-/* Payment Modal Styles */
 .payment-modal-overlay {
   position: fixed;
   top: 0;
@@ -698,9 +676,8 @@ async function processPayment() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 24px 16px; /* Adjusted padding */
+  padding: 24px 24px 16px;
   border-bottom: 1px solid #eee;
-  /* margin-bottom: 24px; Removed margin, use padding on content */
 }
 
 .payment-header h2 {
@@ -716,8 +693,8 @@ async function processPayment() {
   cursor: pointer;
   color: #666;
   padding: 0;
-  width: 32px; /* Fixed size */
-  height: 32px; /* Fixed size */
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -731,7 +708,7 @@ async function processPayment() {
 }
 
 .payment-content {
-  padding: 24px; /* Added padding */
+  padding: 24px;
 }
 
 .order-summary {
@@ -745,7 +722,7 @@ async function processPayment() {
 }
 
 .summary-items {
-  background: #f8f9fa; /* Light gray background */
+  background: #f8f9fa;
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
@@ -764,9 +741,9 @@ async function processPayment() {
 }
 
 .item-name {
-  flex: 1; /* Allow name to take up space */
+  flex: 1;
   font-weight: 500;
-  padding-right: 8px; /* Add space before qty */
+  padding-right: 8px;
 }
 
 .item-qty {
@@ -776,14 +753,14 @@ async function processPayment() {
 
 .item-price {
   font-weight: 600;
-  color: #e74c3c; /* Red price */
+  color: #e74c3c;
 }
 
 .summary-total {
   text-align: right;
   font-size: 20px;
   font-weight: bold;
-  color: #e74c3c; /* Red total price */
+  color: #e74c3c;
 }
 
 .payment-methods h3 {
@@ -810,18 +787,18 @@ async function processPayment() {
 }
 
 .payment-option:hover {
-  border-color: #007bff; /* Blue border on hover */
-  background: #f8f9ff; /* Light blue background */
+  border-color: #007bff;
+  background: #f8f9ff;
 }
 
 .payment-option.active {
-  border-color: #007bff; /* Blue border when active */
-  background: #e3f2fd; /* Lighter blue background when active */
+  border-color: #007bff;
+  background: #e3f2fd;
 }
 
 .payment-option input[type="radio"] {
   margin-right: 16px;
-  transform: scale(1.2); /* Make radio button slightly larger */
+  transform: scale(1.2);
 }
 
 .payment-info {
@@ -833,7 +810,7 @@ async function processPayment() {
 .payment-icon {
   font-size: 24px;
   margin-right: 12px;
-  width: 40px; /* Fixed width */
+  width: 40px;
   text-align: center;
 }
 
@@ -858,11 +835,12 @@ async function processPayment() {
   gap: 12px;
   padding: 24px;
   border-top: 1px solid #eee;
-  margin-top: 24px; /* Ensure space above actions */
+  margin-top: 24px;
 }
 
-.btn-cancel, .btn-pay {
-  flex: 1; /* Make buttons take equal space */
+.btn-cancel,
+.btn-pay {
+  flex: 1;
   padding: 14px 24px;
   border: none;
   border-radius: 8px;
@@ -873,31 +851,36 @@ async function processPayment() {
 }
 
 .btn-cancel {
-  background: #6c757d; /* Gray */
+  background: #6c757d;
   color: white;
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: #5a6268; /* Darker gray */
+  background: #5a6268;
 }
 
 .btn-pay {
-  background: #28a745; /* Green */
+  background: #28a745;
   color: white;
 }
 
 .btn-pay:hover:not(:disabled) {
-  background: #218838; /* Darker green */
+  background: #218838;
 }
 
-.btn-cancel:disabled, .btn-pay:disabled {
+.btn-cancel:disabled,
+.btn-pay:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -911,29 +894,24 @@ async function processPayment() {
   }
 }
 
-/* Responsive Design for Modal */
 @media (max-width: 768px) {
   .payment-modal {
     width: 95%;
-    margin: 20px; /* Add margin */
+    margin: 20px;
   }
-
   .payment-header {
-    padding: 20px 20px 12px; /* Adjust padding */
+    padding: 20px 20px 12px;
   }
-
   .payment-content {
-    padding: 20px; /* Adjust padding */
+    padding: 20px;
   }
-
   .payment-actions {
-    padding: 20px; /* Adjust padding */
-    flex-direction: column; /* Stack buttons */
+    padding: 20px;
+    flex-direction: column;
   }
-
-  .btn-cancel, .btn-pay {
-    width: 100%; /* Make buttons full width */
+  .btn-cancel,
+  .btn-pay {
+    width: 100%;
   }
 }
 </style>
-
