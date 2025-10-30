@@ -38,7 +38,7 @@
           <!-- 🟢 修正 key: 使用 item.magicBagId (大写 B) -->
           <div
             v-for="(item, index) in cart.items"
-            :key="item.magicBagId || index" 
+            :key="item.magicBagId || index"
             class="cart-item"
           >
             <!-- 商品图片 -->
@@ -61,11 +61,18 @@
               <p v-if="!item.magicBagId" class="item-invalid-warning">
                 ⚠️ Item data is invalid (Missing ID).
               </p>
+              <!-- 🟢 Debug: 显示 item 内容 -->
+              <!-- <pre style="font-size: 0.7em; color: grey;">{{ JSON.stringify(item, null, 2) }}</pre> -->
             </div>
 
             <!-- 数量控制 -->
             <div class="item-controls">
               <div class="quantity-control">
+                 <!-- 🟢 Debug: 显示 disabled 条件 -->
+                 <!-- <div style="font-size: 0.7em; color: red;">
+                    Minus Disabled: {{ cart.isLoading || !item.magicBagId || item.quantity <= 1 }}
+                    (isLoading: {{cart.isLoading}}, hasId: {{!!item.magicBagId}}, qty<=1: {{item.quantity <= 1}})
+                 </div> -->
                 <button
                   class="qty-btn"
                   @click="updateQuantity(item.magicBagId, item.quantity - 1)"
@@ -74,6 +81,11 @@
                   −
                 </button>
                 <span class="quantity">{{ item.quantity }}</span>
+                 <!-- 🟢 Debug: 显示 disabled 条件 -->
+                 <!-- <div style="font-size: 0.7em; color: red;">
+                    Plus Disabled: {{ cart.isLoading || !item.magicBagId }}
+                    (isLoading: {{cart.isLoading}}, hasId: {{!!item.magicBagId}})
+                 </div> -->
                 <button
                   class="qty-btn"
                   @click="updateQuantity(item.magicBagId, item.quantity + 1)"
@@ -83,6 +95,12 @@
                 </button>
               </div>
 
+              <!-- 删除按钮 -->
+               <!-- 🟢 Debug: 显示 disabled 条件 -->
+               <!-- <div style="font-size: 0.7em; color: red;">
+                  Remove Disabled: {{ cart.isLoading || !item.magicBagId }}
+                  (isLoading: {{cart.isLoading}}, hasId: {{!!item.magicBagId}})
+               </div> -->
               <button
                 class="remove-btn"
                 @click="removeItem(item.magicBagId)"
@@ -149,6 +167,7 @@
         <div class="order-summary">
           <h3>Order Summary</h3>
           <div class="summary-items">
+            <!-- 🟢 修正 key: 使用 item.magicBagId (大写 B) -->
             <div v-for="item in cart.items" :key="item.magicBagId" class="summary-item">
               <!-- 使用 bagName -->
               <span class="item-name">{{ item.bagName }}</span>
@@ -199,11 +218,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue' 
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter, RouterLink } from 'vue-router' // 🟢 导入 RouterLink
 import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
-import { api } from '@/utils/api' 
+import { api } from '@/utils/api'
 
 const cart = useCartStore()
 const user = useUserStore()
@@ -221,7 +240,7 @@ watch(() => cart.items, (newItems) => {
       });
     }
   });
-}, { deep: true, immediate: true }); 
+}, { deep: true, immediate: true });
 
 
 // 页面加载时自动获取购物车
@@ -233,31 +252,55 @@ onMounted(() => {
 
 // 更新商品数量
 async function updateQuantity(magicBagId, newQty) { // 🟢 参数名改为 magicBagId (大写 B)
+  // 🟢 添加 Debug 日志
+  console.log(`[CartView] updateQuantity called with magicBagId: ${magicBagId} (type: ${typeof magicBagId}), newQty: ${newQty}`);
   if (!magicBagId) { // 🟢 检查 magicBagId
     console.error("updateQuantity called with invalid magicBagId:", magicBagId);
     return;
   }
-  await cart.updateItemQuantity(magicBagId, newQty); // 🟢 传递 magicBagId
+  // 🟢 添加 try...catch 块
+  try {
+      await cart.updateItemQuantity(magicBagId, newQty); // 🟢 传递 magicBagId
+      console.log(`[CartView] updateItemQuantity store action called for ${magicBagId}`);
+  } catch (error) {
+       console.error(`[CartView] Error calling updateItemQuantity for ${magicBagId}:`, error);
+  }
 }
 
 // 删除商品
 async function removeItem(magicBagId) { // 🟢 参数名改为 magicBagId (大写 B)
+  // 🟢 添加 Debug 日志
+  console.log(`[CartView] removeItem called with magicBagId: ${magicBagId} (type: ${typeof magicBagId})`);
   if (!magicBagId) { // 🟢 检查 magicBagId
     console.error("removeItem called with invalid magicBagId:", magicBagId);
     return;
   }
-  await cart.removeItemFromCart(magicBagId); // 🟢 传递 magicBagId
+  // 🟢 添加 try...catch 块
+  try {
+      await cart.removeItemFromCart(magicBagId); // 🟢 传递 magicBagId
+      console.log(`[CartView] removeItemFromCart store action called for ${magicBagId}`);
+  } catch (error) {
+      console.error(`[CartView] Error calling removeItemFromCart for ${magicBagId}:`, error);
+  }
 }
 
 // 清空购物车
 async function clearCart() {
-  await cart.clearServerCart();
+   // 🟢 添加 Debug 日志
+   console.log("[CartView] clearCart called.");
+   // 🟢 添加 try...catch 块
+   try {
+       await cart.clearServerCart();
+       console.log("[CartView] clearServerCart store action called.");
+   } catch (error) {
+        console.error("[CartView] Error calling clearServerCart:", error);
+   }
 }
 
 // --- 结算与支付 ---
 
 const showPaymentModal = ref(false)
-const selectedPayment = ref('mock') 
+const selectedPayment = ref('mock')
 const isProcessing = ref(false)
 
 function checkout() {
@@ -265,9 +308,9 @@ function checkout() {
     window.dispatchEvent(new Event('open-login'));
     return;
   }
-  if (!cart.items || cart.items.length === 0) { 
+  if (!cart.items || cart.items.length === 0) {
     console.warn('Cart is empty, cannot proceed to checkout.');
-    alert('Your cart is empty!'); 
+    alert('Your cart is empty!');
     return;
   }
   showPaymentModal.value = true;
@@ -287,28 +330,32 @@ async function processPayment() {
 
   try {
     console.log("Simulating payment processing...");
-    await new Promise(resolve => setTimeout(resolve, 500)); 
+    await new Promise(resolve => setTimeout(resolve, 500));
     console.log("Mock payment successful.");
 
     console.log("Attempting to create order from cart via API...");
-    const response = await api.post('/api/orders/from-cart'); 
+    // 🟢 修正 API 路径：使用 /api/order/from-cart
+    const response = await api.post('/api/order/from-cart');
 
-    // 使用正确的成功 code 判断
-    if (response.data?.code == 20000 && response.data?.data) {
+    // 使用正确的成功 code 判断 (兼容 1 和 20000)
+    const successCode = response.data?.code == 1 || response.data?.code == 20000;
+    if (successCode && response.data?.data) {
       const newOrder = response.data.data;
       console.log("✅ Order created successfully via API:", newOrder);
 
-      await cart.fetchCart(); 
+      await cart.fetchCart();
       closePaymentModal();
-      router.push('/order-history'); 
+      router.push('/order-history');
 
     } else {
       console.error("❌ Failed to create order via API:", response.data);
-      alert(`Failed to create order: ${response.data?.message || 'Unknown error from server'}`);
+      // 🟢 即使 message 是 SUCCESS，也显示错误
+      alert(`An error occurred: ${response.data?.message || 'Unknown error from server'}`);
     }
 
   } catch (error) {
     console.error('❌ Error during payment processing or order creation:', error);
+     // 🟢 显示更具体的错误信息
     alert(`An error occurred: ${error.response?.data?.message || error.message || 'Please try again.'}`);
   } finally {
     isProcessing.value = false;

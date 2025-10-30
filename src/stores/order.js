@@ -47,12 +47,13 @@ export const useOrderStore = defineStore('order', () => {
 
     try {
       console.log("[OrderStore] Fetching orders with params:", queryParams);
-      // 使用正确的 API 路径
-      const response = await api.get('/api/orders', { params: queryParams });
+      // 🟢 修正：统一使用 /api/order 路径获取列表
+      const response = await api.get('/api/order', { params: queryParams }); 
 
       // 后端返回的数据结构是 Result<IPage<OrderDto>>
-      // 🟢 修正：使用宽松相等 (==) 检查 code，以兼容数字或字符串形式的 20000
-      if (response.data?.code == 20000 && response.data?.data) { 
+      // 使用宽松相等 (==) 检查 code，以兼容数字或字符串形式的 20000 (或其他成功码如 1)
+      const successCode = response.data?.code == 1 || response.data?.code == 20000; 
+      if (successCode && response.data?.data) { 
           const pageData = response.data.data;
           // 添加更健壮的检查，确保 records 存在且是数组
           if (pageData && Array.isArray(pageData.records)) {
@@ -71,17 +72,21 @@ export const useOrderStore = defineStore('order', () => {
             error.value = "Invalid data structure received";
           }
       } else {
-          // 处理后端返回错误码或 code 不是 20000 的情况
+          // 处理后端返回错误码或 code 不匹配的情况
           console.warn("[OrderStore] API request failed or returned non-success code:", response.data);
           orders.value = [];
-          // 🟢 即使 message 是 "SUCCESS"，也将其视为错误，因为 code 不匹配或 data 缺失
           error.value = response.data?.message || "Failed to fetch orders or received invalid response"; 
       }
 
 
     } catch (err) {
       console.error("[OrderStore] Fetch orders failed:", err);
-      error.value = err.response?.data?.message || err.message || "Failed to load orders";
+      // 如果是 404 错误，给出更明确的提示
+      if (err.response?.status === 404) {
+           error.value = "Order API endpoint not found (404). Please check gateway routing for /api/order."; // 更新提示信息
+      } else {
+           error.value = err.response?.data?.message || err.message || "Failed to load orders";
+      }
       orders.value = []; // 出错时清空
     } finally {
       isLoading.value = false;
@@ -100,12 +105,14 @@ export const useOrderStore = defineStore('order', () => {
     
     try {
       console.log(`[OrderStore] Updating order ${orderId} to status: ${status}`);
-      const response = await api.put(`/api/orders/${orderId}/status`, {
+      // 使用 /api/order/ 路径
+      const response = await api.put(`/api/order/${orderId}/status`, { 
         status: status,
         remark: remark
       });
       
-      if (response.data?.code == 20000) {
+      const successCode = response.data?.code == 1 || response.data?.code == 20000;
+      if (successCode) {
         console.log(`[OrderStore] Order ${orderId} updated successfully`);
         // 重新获取订单列表以更新显示
         await fetchOrders();
@@ -132,9 +139,11 @@ export const useOrderStore = defineStore('order', () => {
     
     try {
       console.log(`[OrderStore] Cancelling order ${orderId}`);
-      const response = await api.put(`/api/orders/${orderId}/cancel`);
+       // 使用 /api/order/ 路径
+      const response = await api.put(`/api/order/${orderId}/cancel`); 
       
-      if (response.data?.code == 20000) {
+      const successCode = response.data?.code == 1 || response.data?.code == 20000;
+      if (successCode) {
         console.log(`[OrderStore] Order ${orderId} cancelled successfully`);
         // 重新获取订单列表以更新显示
         await fetchOrders();
@@ -154,7 +163,7 @@ export const useOrderStore = defineStore('order', () => {
   /**
    * 核销订单（商家使用）
    * @param {number} orderId - 订单ID
-   * @param {object} verificationData - 核销数据 { location, verifierName }
+   * @param {object} verificationData - 核销数据 { location } (根据 OrderVerificationDto 调整)
    */
   async function verifyOrder(orderId, verificationData = {}) {
     isLoading.value = true;
@@ -162,13 +171,16 @@ export const useOrderStore = defineStore('order', () => {
     
     try {
       console.log(`[OrderStore] Verifying order ${orderId}`, verificationData);
-      const response = await api.post(`/api/orders/${orderId}/verify`, {
-        orderId: orderId,
-        location: verificationData.location || 'Store Front',
-        verifierName: verificationData.verifierName || 'Merchant'
+       // 使用 /api/order/ 路径
+      const response = await api.post(`/api/order/${orderId}/verify`, { 
+        // 🔴 根据 OrderVerificationDto，Body 只需要 location
+        location: verificationData.location || 'Store Front', 
+        // orderId: orderId, // 这个通常从 URL Path 获取
+        // verifierName: verificationData.verifierName || 'Merchant' // 这个应该由后端从 currentUser 获取
       });
       
-      if (response.data?.code == 20000) {
+      const successCode = response.data?.code == 1 || response.data?.code == 20000;
+      if (successCode) {
         console.log(`[OrderStore] Order ${orderId} verified successfully`);
         // 重新获取订单列表以更新显示
         await fetchOrders();
