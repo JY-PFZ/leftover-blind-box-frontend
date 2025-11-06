@@ -1,0 +1,134 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam ArrowColor #444444
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+
+' ===== Left: Edge / Entry =====
+rectangle "Users" as USERS #white {
+  component "Web\nBrowser" as WEB
+  component "Mobile\nBrowser" as MOB
+  component "Admin\nConsole" as ADM
+}
+
+rectangle "DNS / WAF" as DNS #F7F7F7
+rectangle "NGINX Cluster" as NGINX #E8F0FE {
+  component "nginx-1" as N1
+  component "nginx-2" as N2
+}
+
+rectangle "API Gateway Cluster" as GATEWAY #F3E8FF {
+  component "gateway-1\n(Spring Cloud Gateway/Kong)" as GW1
+  component "gateway-2" as GW2
+}
+
+USERS -right-> DNS
+DNS -right-> NGINX
+NGINX -right-> GATEWAY
+
+' ===== Right: App Layer (Two Servers / Nodes) =====
+package "Kubernetes / Swarm Cluster" as CLUS #FFFFFF {
+
+  package "Server 1 (Node A)" as S1 #FFF7E6 {
+    rectangle "user-service-1" as us1
+    rectangle "product-service-1" as ps1
+    rectangle "inventory-service-1" as is1
+    rectangle "order-service-1" as os1
+    rectangle "payment-service-1" as pay1
+    rectangle "review-service-1" as rs1
+    rectangle "notification-service-1" as ns1
+    rectangle "analytics-service-1" as as1
+  }
+
+  package "Server 2 (Node B)" as S2 #FFF7E6 {
+    rectangle "user-service-2" as us2
+    rectangle "product-service-2" as ps2
+    rectangle "inventory-service-2" as is2
+    rectangle "order-service-2" as os2
+    rectangle "payment-service-2" as pay2
+    rectangle "review-service-2" as rs2
+    rectangle "notification-service-2" as ns2
+    rectangle "analytics-service-2" as as2
+  }
+
+  ' Service discovery / registry
+  package "Service Discovery" as DISC #E6FFF2 {
+    component "K8s Service /\nSwarm DNS" as SD
+  }
+}
+
+' Gateways route to services via discovery
+GATEWAY -right-> SD
+SD -down-> us1
+SD -down-> us2
+SD -down-> ps1
+SD -down-> ps2
+SD -down-> os1
+SD -down-> os2
+SD -down-> pay1
+SD -down-> pay2
+SD -down-> rs1
+SD -down-> rs2
+SD -down-> is1
+SD -down-> is2
+SD -down-> ns1
+SD -down-> ns2
+SD -down-> as1
+SD -down-> as2
+
+' ===== Bottom: Data & Infra =====
+package "Data Layer" as DATA #EEF8E8 {
+  database "MySQL\n(user/product/order/review...)" as MYSQL
+  component "Redis Cache" as REDIS
+}
+
+package "Async Messaging" as MQ #FFF0F6 {
+  component "Kafka / RabbitMQ\n(orders, inventory, notifications, analytics)" as KAFKA
+}
+
+' Data dependencies
+os1 -down-> MYSQL
+os2 -down-> MYSQL
+us1 -down-> MYSQL
+us2 -down-> MYSQL
+ps1 -down-> MYSQL
+ps2 -down-> MYSQL
+is1 -down-> MYSQL
+is2 -down-> MYSQL
+rs1 -down-> MYSQL
+rs2 -down-> MYSQL
+pay1 -down-> MYSQL
+pay2 -down-> MYSQL
+as1 -down-> MYSQL
+as2 -down-> MYSQL
+
+' Cache usage
+ps1 -down-> REDIS
+ps2 -down-> REDIS
+
+' Async flows (event-driven)
+os1 -down-> KAFKA : "OrderCreated"
+os2 -down-> KAFKA : "OrderPaid"
+KAFKA -up-> is1 : "Reserve/Release\nStock"
+KAFKA -up-> ns1 : "Send Email/SMS"
+KAFKA -up-> as1 : "Ingest events"
+
+' ===== Notes =====
+note bottom of NGINX
+Deployed across Node A & Node B
+(HA + Sticky / Round-robin)
+end note
+
+note bottom of GATEWAY
+Centralized routing, rate limit,
+auth (JWT), circuit breaker
+end note
+
+note bottom of DATA
+Primary-Replica or\nCloud managed DB
+Backup & PITR
+end note
+
+@enduml
