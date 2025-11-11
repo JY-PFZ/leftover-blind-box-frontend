@@ -1,8 +1,8 @@
 <template>
   <div class="admin-container">
     <div class="admin-header">
-      <h1>🛠️ 管理员控制台</h1>
-      <p>管理用户和商家账户</p>
+      <h1>🛠️ Admin Console</h1>
+      <p>Manage users and merchants</p>
     </div>
 
     <div class="admin-tabs">
@@ -11,33 +11,33 @@
         :class="{ active: activeTab === 'users' }"
         class="tab-button"
       >
-        👥 用户管理 ({{ users.length }})
+        👥 Users ({{ users.length }})
       </button>
       <button 
         @click="activeTab = 'merchants'" 
         :class="{ active: activeTab === 'merchants' }"
         class="tab-button"
       >
-        🏪 商家管理 ({{ merchants.length }})
+        🏪 Merchants ({{ merchants.length }})
       </button>
       <button 
         @click="activeTab = 'stats'" 
         :class="{ active: activeTab === 'stats' }"
         class="tab-button"
       >
-        📊 数据统计
+        📊 Analytics
       </button>
     </div>
 
     <!-- 用户管理 -->
     <div v-if="activeTab === 'users'" class="management-section">
       <div class="section-header">
-        <h2>👥 用户管理</h2>
+        <h2>👥 User Management</h2>
         <div class="search-box">
           <input 
             v-model="userSearchQuery" 
             type="text" 
-            placeholder="🔍 搜索用户..." 
+            placeholder="🔍 Search users..." 
             class="search-input"
           />
         </div>
@@ -48,12 +48,12 @@
           <thead>
             <tr>
               <th>ID</th>
-              <th>用户名</th>
-              <th>邮箱</th>
-              <th>角色</th>
-              <th>注册时间</th>
-              <th>状态</th>
-              <th>操作</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Registered At</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -69,7 +69,7 @@
               <td>{{ formatDate(user.createdAt) }}</td>
               <td>
                 <span :class="`status-badge status-${user.isActive ? 'active' : 'inactive'}`">
-                  {{ user.isActive ? '✅ 激活' : '❌ 未激活' }}
+                  {{ user.isActive ? '✅ Active' : '❌ Inactive' }}
                 </span>
               </td>
               <td>
@@ -77,13 +77,13 @@
                   @click="toggleUserStatus(user)" 
                   :class="user.isActive ? 'deactivate-btn' : 'activate-btn'"
                 >
-                  {{ user.isActive ? '禁用' : '启用' }}
+                  {{ user.isActive ? 'Disable' : 'Enable' }}
                 </button>
                 <button 
                   @click="deleteUser(user)" 
                   class="delete-btn"
                 >
-                  删除
+                  Delete
                 </button>
               </td>
             </tr>
@@ -95,12 +95,12 @@
     <!-- 商家管理 -->
     <div v-if="activeTab === 'merchants'" class="management-section">
       <div class="section-header">
-        <h2>🏪 商家管理</h2>
+        <h2>🏪 Merchant Management</h2>
         <div class="search-box">
           <input 
             v-model="merchantSearchQuery" 
             type="text" 
-            placeholder="🔍 搜索商家..." 
+            placeholder="🔍 Search merchants..." 
             class="search-input"
           />
         </div>
@@ -111,13 +111,13 @@
           <thead>
             <tr>
               <th>ID</th>
-              <th>商家名称</th>
-              <th>联系人</th>
-              <th>邮箱</th>
-              <th>电话</th>
-              <th>地址</th>
-              <th>状态</th>
-              <th>操作</th>
+              <th>Merchant Name</th>
+              <th>Contact</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -130,7 +130,7 @@
               <td>{{ merchant.address }}</td>
               <td>
                 <span :class="`status-badge status-${merchant.isActive ? 'active' : 'inactive'}`">
-                  {{ merchant.isActive ? '✅ 营业中' : '❌ 已关闭' }}
+                  {{ merchant.isActive ? '✅ Open' : '❌ Closed' }}
                 </span>
               </td>
               <td>
@@ -138,13 +138,13 @@
                   @click="toggleMerchantStatus(merchant)" 
                   :class="merchant.isActive ? 'deactivate-btn' : 'activate-btn'"
                 >
-                  {{ merchant.isActive ? '关闭' : '开启' }}
+                  {{ merchant.isActive ? 'Close' : 'Open' }}
                 </button>
                 <button 
                   @click="deleteMerchant(merchant)" 
                   class="delete-btn"
                 >
-                  删除
+                  Delete
                 </button>
               </td>
             </tr>
@@ -156,7 +156,7 @@
     <!-- 数据统计 -->
     <div v-if="activeTab === 'stats'" class="management-section">
       <div class="section-header">
-        <h2>📊 数据统计</h2>
+        <h2>📊 Analytics</h2>
       </div>
       
       <div class="stats-grid">
@@ -164,8 +164,8 @@
           <div class="stat-icon">👥</div>
           <div class="stat-content">
             <h3>{{ users.length }}</h3>
-            <p>总用户数</p>
-            <small>活跃: {{ activeUsersCount }}</small>
+            <p>Total Users</p>
+            <small>Active: {{ activeUsersCount }}</small>
           </div>
         </div>
         
@@ -173,8 +173,8 @@
           <div class="stat-icon">🏪</div>
           <div class="stat-content">
             <h3>{{ merchants.length }}</h3>
-            <p>总商家数</p>
-            <small>营业中: {{ activeMerchantsCount }}</small>
+            <p>Total Merchants</p>
+            <small>Open: {{ activeMerchantsCount }}</small>
           </div>
         </div>
         
@@ -182,8 +182,8 @@
           <div class="stat-icon">📦</div>
           <div class="stat-content">
             <h3>{{ totalProducts }}</h3>
-            <p>商品总数</p>
-            <small>在售: {{ activeProductsCount }}</small>
+            <p>Total Products</p>
+            <small>On Sale: {{ activeProductsCount }}</small>
           </div>
         </div>
         
@@ -191,8 +191,8 @@
           <div class="stat-icon">💰</div>
           <div class="stat-content">
             <h3>¥{{ totalRevenue.toLocaleString() }}</h3>
-            <p>总收入</p>
-            <small>本月: ¥{{ monthlyRevenue.toLocaleString() }}</small>
+            <p>Total Revenue</p>
+            <small>This month: ¥{{ monthlyRevenue.toLocaleString() }}</small>
           </div>
         </div>
       </div>
@@ -201,11 +201,11 @@
     <!-- 确认删除对话框 -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click="showDeleteConfirm = false">
       <div class="modal-content" @click.stop>
-        <h3>⚠️ 确认删除</h3>
+        <h3>⚠️ Confirm Delete</h3>
         <p>{{ deleteConfirmMessage }}</p>
         <div class="modal-actions">
-          <button @click="confirmDelete" class="confirm-btn">确认删除</button>
-          <button @click="showDeleteConfirm = false" class="cancel-btn">取消</button>
+          <button @click="confirmDelete" class="confirm-btn">Delete</button>
+          <button @click="showDeleteConfirm = false" class="cancel-btn">Cancel</button>
         </div>
       </div>
     </div>
@@ -230,7 +230,7 @@ export default {
     const users = ref([
       {
         id: 1,
-        username: '张三',
+        username: 'zhangsan',
         email: 'zhangsan@example.com',
         role: 'CUSTOMER',
         createdAt: '2024-01-15',
@@ -238,7 +238,7 @@ export default {
       },
       {
         id: 2,
-        username: '李四',
+        username: 'lisi',
         email: 'lisi@example.com',
         role: 'CUSTOMER',
         createdAt: '2024-01-20',
@@ -246,7 +246,7 @@ export default {
       },
       {
         id: 3,
-        username: '王五',
+        username: 'wangwu',
         email: 'wangwu@example.com',
         role: 'MERCHANT',
         createdAt: '2024-01-10',
@@ -254,7 +254,7 @@ export default {
       },
       {
         id: 4,
-        username: '赵六',
+        username: 'zhaoliu',
         email: 'zhaoliu@example.com',
         role: 'CUSTOMER',
         createdAt: '2024-02-01',
@@ -273,29 +273,29 @@ export default {
     const merchants = ref([
       {
         id: 1,
-        name: '美味餐厅',
-        contactPerson: '王五',
+        name: 'Delicious Restaurant',
+        contactPerson: 'wangwu',
         email: 'wangwu@example.com',
         phone: '138-0000-0001',
-        address: '北京市朝阳区xxx街道',
+        address: 'Chaoyang District, Beijing',
         isActive: true
       },
       {
         id: 2,
-        name: '新鲜水果店',
-        contactPerson: '陈七',
+        name: 'Fresh Fruit Shop',
+        contactPerson: 'chenqi',
         email: 'chenqi@example.com',
         phone: '138-0000-0002',
-        address: '上海市浦东新区xxx路',
+        address: 'Pudong, Shanghai',
         isActive: true
       },
       {
         id: 3,
-        name: '烘焙工坊',
-        contactPerson: '刘八',
+        name: 'Bakery Workshop',
+        contactPerson: 'liuba',
         email: 'liuba@example.com',
         phone: '138-0000-0003',
-        address: '广州市天河区xxx大道',
+        address: 'Tianhe, Guangzhou',
         isActive: false
       }
     ])
@@ -337,15 +337,15 @@ export default {
 
     // 方法
     const formatDate = (dateString) => {
-      if (!dateString) return '未知'
-      return new Date(dateString).toLocaleDateString('zh-CN')
+      if (!dateString) return 'Unknown'
+      return new Date(dateString).toLocaleDateString('en-US')
     }
 
     const getRoleText = (role) => {
       const roleMap = {
-        'CUSTOMER': '👤 普通用户',
-        'MERCHANT': '🏪 商家',
-        'ADMIN': '👑 管理员'
+        'CUSTOMER': '👤 Customer',
+        'MERCHANT': '🏪 Merchant',
+        'ADMIN': '👑 Admin'
       }
       return roleMap[role] || role
     }
@@ -360,13 +360,13 @@ export default {
 
     const deleteUser = (user) => {
       deleteTarget.value = user
-      deleteConfirmMessage.value = `确定要删除用户 "${user.username}" 吗？此操作不可撤销。`
+      deleteConfirmMessage.value = `Are you sure you want to delete user "${user.username}"? This action cannot be undone.`
       showDeleteConfirm.value = true
     }
 
     const deleteMerchant = (merchant) => {
       deleteTarget.value = merchant
-      deleteConfirmMessage.value = `确定要删除商家 "${merchant.name}" 吗？此操作不可撤销。`
+      deleteConfirmMessage.value = `Are you sure you want to delete merchant "${merchant.name}"? This action cannot be undone.`
       showDeleteConfirm.value = true
     }
 

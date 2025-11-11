@@ -1,24 +1,24 @@
 <template>
   <div class="admin-dashboard">
-    <!-- 顶部导航栏 -->
+    <!-- Top Bar -->
     <header class="admin-header">
       <div class="header-content">
         <h1 class="logo">🛍️ Magic Bag</h1>
         <div class="header-right">
-          <span class="admin-badge">管理员</span>
+          <span class="admin-badge">Admin</span>
           <span class="username">{{ username }}</span>
-          <button class="btn-logout" @click="handleLogout">退出</button>
+          <button class="btn-logout" @click="handleLogout">Logout</button>
         </div>
       </div>
     </header>
 
     <!-- 主内容区 -->
     <main class="admin-main">
-      <!-- 侧边栏 -->
+      <!-- Sidebar -->
       <aside class="admin-sidebar">
           <nav class="sidebar-nav">
             <div class="nav-section">
-              <h2 class="nav-title">管理后台</h2>
+              <h2 class="nav-title">Admin Console</h2>
               <ul class="nav-list">
                 <li 
                   class="nav-item" 
@@ -26,7 +26,7 @@
                   @click="activeTab = 'tasks'"
                 >
                   <span class="nav-icon">📋</span>
-                  <span class="nav-text">任务管理</span>
+                  <span class="nav-text">Tasks</span>
                 </li>
                 <li 
                   class="nav-item"
@@ -34,7 +34,7 @@
                   @click="activeTab = 'merchants'"
                 >
                   <span class="nav-icon">🏪</span>
-                  <span class="nav-text">商家管理</span>
+                  <span class="nav-text">Merchants</span>
                 </li>
                 <li 
                   class="nav-item"
@@ -42,59 +42,59 @@
                   @click="activeTab = 'stats'"
                 >
                   <span class="nav-icon">📊</span>
-                  <span class="nav-text">数据统计</span>
+                  <span class="nav-text">Analytics</span>
                 </li>
               </ul>
             </div>
           </nav>
         </aside>
 
-        <!-- 内容区 -->
+        <!-- Content -->
         <div class="admin-content">
-          <!-- 任务管理 -->
+          <!-- Tasks -->
           <div v-if="activeTab === 'tasks'">
-        <!-- 页面标题 -->
+        <!-- Page header -->
         <div class="page-header">
-          <h2 class="page-title">任务管理</h2>
-          <p class="page-subtitle">审核商家注册申请</p>
+          <h2 class="page-title">Task Management</h2>
+          <p class="page-subtitle">Review merchant registration requests</p>
         </div>
 
-        <!-- 统计卡片 -->
+        <!-- Stats -->
         <div class="stats-grid">
           <div class="stat-card stat-pending">
             <div class="stat-icon">⏳</div>
             <div class="stat-info">
-              <p class="stat-label">待处理</p>
+              <p class="stat-label">Pending</p>
               <p class="stat-value">{{ stats.pending }}</p>
             </div>
           </div>
           <div class="stat-card stat-processing">
             <div class="stat-icon">🔄</div>
             <div class="stat-info">
-              <p class="stat-label">处理中</p>
+              <p class="stat-label">In Progress</p>
               <p class="stat-value">{{ stats.processing }}</p>
             </div>
           </div>
           <div class="stat-card stat-approved">
             <div class="stat-icon">✅</div>
             <div class="stat-info">
-              <p class="stat-label">已通过</p>
+              <p class="stat-label">Approved</p>
               <p class="stat-value">{{ stats.approved }}</p>
             </div>
           </div>
           <div class="stat-card stat-rejected">
             <div class="stat-icon">❌</div>
             <div class="stat-info">
-              <p class="stat-label">已拒绝</p>
+              <p class="stat-label">Rejected</p>
               <p class="stat-value">{{ stats.rejected }}</p>
             </div>
           </div>
         </div>
 
-        <!-- 任务列表 -->
+        <!-- Task list -->
         <div class="tasks-container">
           <div class="tasks-header">
-            <h3 class="tasks-title">任务列表</h3>
+            <h3 class="tasks-title">Tasks</h3>
             <div class="filter-tabs">
               <button 
                 v-for="status in statusTabs" 
@@ -129,15 +129,15 @@
               <div class="task-content">
                 <div class="task-detail">
                   <div class="detail-item">
-                    <span class="detail-label">申请人:</span>
+                    <span class="detail-label">Applicant:</span>
                     <span class="detail-value">{{ task.applicant }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">商家名称:</span>
+                    <span class="detail-label">Merchant Name:</span>
                     <span class="detail-value">{{ task.shopName }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">联系方式:</span>
+                    <span class="detail-label">Contact:</span>
                     <span class="detail-value">{{ task.phone }}</span>
                   </div>
                 </div>
@@ -148,57 +148,57 @@
                     class="btn btn-primary"
                     @click="claimTask(task.id)"
                   >
-                    📝 领取任务
+                    📝 Claim Task
                   </button>
                   <button 
                     v-if="task.status === 'processing'"
                     class="btn btn-success"
                     @click="approveTask(task.id)"
                   >
-                    ✅ 批准
+                    ✅ Approve
                   </button>
                   <button 
                     v-if="task.status === 'processing'"
                     class="btn btn-danger"
                     @click="showRejectModal(task)"
                   >
-                    ❌ 拒绝
+                    ❌ Reject
                   </button>
                   <button 
                     v-if="task.status === 'processing'"
                     class="btn btn-secondary"
                     @click="viewDetails(task)"
                   >
-                    👁️ 查看详情
+                    👁️ View Details
                   </button>
                 </div>
               </div>
                 </div>
               </div>
 
-            <!-- 错误提示 -->
+            <!-- Error -->
             <div v-if="taskError" class="error-alert">
               <div class="error-icon">⚠️</div>
               <div class="error-content">
-                <h4 class="error-title">无法加载任务列表</h4>
+                <h4 class="error-title">Failed to load tasks</h4>
                 <p class="error-message">{{ taskError }}</p>
-                <button class="btn btn-primary" @click="fetchTasks">重试</button>
+                <button class="btn btn-primary" @click="fetchTasks">Retry</button>
             </div>
           </div>
 
-          <!-- 空状态 -->
+          <!-- Empty -->
             <div v-if="filteredTasks.length === 0 && !taskError" class="empty-state">
             <div class="empty-icon">📭</div>
-            <p class="empty-text">暂无任务</p>
+            <p class="empty-text">No tasks</p>
           </div>
             </div>
           </div>
 
-          <!-- 商家管理 -->
+          <!-- Merchants -->
           <div v-if="activeTab === 'merchants'" class="tab-content">
             <div class="page-header">
-              <h2 class="page-title">商家管理</h2>
-              <p class="page-subtitle">管理系统商家</p>
+              <h2 class="page-title">Merchant Management</h2>
+              <p class="page-subtitle">Manage merchants</p>
             </div>
             <div class="merchants-container">
               <div class="table-container">
@@ -206,28 +206,28 @@
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>商家名称</th>
-                      <th>联系方式</th>
-                      <th>地址</th>
-                      <th>评分</th>
-                      <th>状态</th>
-                      <th>操作</th>
+                      <th>Merchant Name</th>
+                      <th>Contact</th>
+                      <th>Address</th>
+                      <th>Rating</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="merchant in merchants" :key="merchant.id">
                       <td>{{ merchant.id }}</td>
-                      <td>{{ merchant.name || merchant.shopName || '未知商家' }}</td>
-                      <td>{{ merchant.phone || '未知' }}</td>
-                      <td>{{ merchant.address || '未知' }}</td>
+                      <td>{{ merchant.name || merchant.shopName || 'Unknown Merchant' }}</td>
+                      <td>{{ merchant.phone || 'Unknown' }}</td>
+                      <td>{{ merchant.address || 'Unknown' }}</td>
                       <td>{{ merchant.score || merchant.rating || 0 }}</td>
-                      <td><span :class="['status-badge', (merchant.status === 'approved' || merchant.status === 'APPROVED') ? 'active' : 'inactive']">{{ (merchant.status === 'approved' || merchant.status === 'APPROVED') ? '已批准' : '待审核' }}</span></td>
+                      <td><span :class="['status-badge', (merchant.status === 'approved' || merchant.status === 'APPROVED') ? 'active' : 'inactive']">{{ (merchant.status === 'approved' || merchant.status === 'APPROVED') ? 'Approved' : 'Pending Review' }}</span></td>
                       <td>
                         <button 
                           class="btn btn-sm btn-primary"
                           @click="viewMerchantDetail(merchant)"
                         >
-                          查看详情
+                          View Details
                         </button>
                       </td>
                     </tr>
@@ -235,38 +235,38 @@
                 </table>
                 <div v-if="merchants.length === 0" class="empty-state">
                   <div class="empty-icon">🏪</div>
-                  <p class="empty-text">暂无商家数据</p>
+                  <p class="empty-text">No merchant data</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 数据统计 -->
+          <!-- Analytics -->
           <div v-if="activeTab === 'stats'" class="tab-content">
             <div class="page-header">
-              <h2 class="page-title">数据统计</h2>
-              <p class="page-subtitle">系统整体数据概览</p>
+              <h2 class="page-title">Analytics</h2>
+              <p class="page-subtitle">Overview</p>
             </div>
             <div class="stats-overview">
               <div class="overview-grid">
                 <div class="overview-card">
                   <div class="overview-icon">🏪</div>
                   <div class="overview-info">
-                    <p class="overview-label">总商家数</p>
+                    <p class="overview-label">Total Merchants</p>
                     <p class="overview-value">{{ statsData.totalMerchants || 0 }}</p>
                   </div>
                 </div>
                 <div class="overview-card">
                   <div class="overview-icon">📦</div>
                   <div class="overview-info">
-                    <p class="overview-label">总订单数</p>
+                    <p class="overview-label">Total Orders</p>
                     <p class="overview-value">{{ statsData.totalOrders || 0 }}</p>
                   </div>
                 </div>
                 <div class="overview-card">
                   <div class="overview-icon">💰</div>
                   <div class="overview-info">
-                    <p class="overview-label">总交易额</p>
+                    <p class="overview-label">Total Revenue</p>
                     <p class="overview-value">¥{{ (statsData.totalRevenue || 0).toFixed(2) }}</p>
                   </div>
                 </div>
@@ -276,78 +276,78 @@
       </div>
     </main>
 
-    <!-- 拒绝弹窗 -->
+    <!-- Reject Modal -->
     <div v-if="showRejectDialog" class="modal-overlay" @click="showRejectDialog = false">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">拒绝任务</h3>
+          <h3 class="modal-title">Reject Task</h3>
           <button class="modal-close" @click="showRejectDialog = false">×</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">拒绝原因</label>
+            <label class="form-label">Rejection Reason</label>
             <textarea 
               v-model="rejectComment"
               class="form-textarea"
-              placeholder="请输入拒绝原因..."
+              placeholder="Please enter a reason..."
               rows="4"
             ></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showRejectDialog = false">取消</button>
-          <button class="btn btn-danger" @click="confirmReject">确认拒绝</button>
+          <button class="btn btn-secondary" @click="showRejectDialog = false">Cancel</button>
+          <button class="btn btn-danger" @click="confirmReject">Confirm Reject</button>
         </div>
       </div>
     </div>
 
-    <!-- 任务详情弹窗 -->
+    <!-- Task Details Modal -->
     <div v-if="showTaskDetailDialog && currentTask" class="modal-overlay" @click="showTaskDetailDialog = false">
       <div class="modal-content modal-large" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">任务详情</h3>
+          <h3 class="modal-title">Task Details</h3>
           <button class="modal-close" @click="showTaskDetailDialog = false">×</button>
         </div>
         <div class="modal-body">
           <div class="detail-section">
-            <h4>基本信息</h4>
+            <h4>Basic Info</h4>
             <div class="detail-grid">
               <div class="detail-item">
-                <span class="detail-label">任务标题:</span>
+                <span class="detail-label">Title:</span>
                 <span class="detail-value">{{ currentTask.title }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">任务类型:</span>
+                <span class="detail-label">Type:</span>
                 <span class="detail-value">{{ currentTask.typeLabel }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">任务状态:</span>
+                <span class="detail-label">Status:</span>
                 <span class="detail-value status-badge" :class="'status-' + currentTask.statusKey">{{ currentTask.statusLabel }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">申请人ID:</span>
+                <span class="detail-label">Applicant ID:</span>
                 <span class="detail-value">{{ currentTask.applicant }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">商家名称:</span>
+                <span class="detail-label">Merchant Name:</span>
                 <span class="detail-value">{{ currentTask.shopName }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">联系方式:</span>
+                <span class="detail-label">Contact:</span>
                 <span class="detail-value">{{ currentTask.phone }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">申请时间:</span>
+                <span class="detail-label">Applied At:</span>
                 <span class="detail-value">{{ currentTask.time }}</span>
               </div>
               <div class="detail-item" v-if="currentTask.address">
-                <span class="detail-label">商家地址:</span>
+                <span class="detail-label">Address:</span>
                 <span class="detail-value">{{ currentTask.address }}</span>
               </div>
               <div class="detail-item" v-if="currentTask.businessLicense">
-                <span class="detail-label">营业执照:</span>
+                <span class="detail-label">Business License:</span>
                 <span class="detail-value">
-                  <a :href="currentTask.businessLicense" target="_blank" v-if="currentTask.businessLicense.startsWith('http')">查看图片</a>
+                  <a :href="currentTask.businessLicense" target="_blank" v-if="currentTask.businessLicense.startsWith('http')">View Image</a>
                   <span v-else>{{ currentTask.businessLicense }}</span>
                 </span>
               </div>
@@ -355,27 +355,27 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showTaskDetailDialog = false">关闭</button>
+          <button class="btn btn-secondary" @click="showTaskDetailDialog = false">Close</button>
           <button 
             v-if="currentTask.status === 'pending'"
             class="btn btn-primary"
             @click="claimTask(currentTask.id)"
           >
-            领取任务
+            Claim Task
           </button>
           <button 
             v-if="currentTask.status === 'processing'"
             class="btn btn-success"
             @click="approveTask(currentTask.id)"
           >
-            批准
+            Approve
           </button>
           <button 
             v-if="currentTask.status === 'processing'"
             class="btn btn-danger"
             @click="showRejectModal(currentTask)"
           >
-            拒绝
+            Reject
           </button>
         </div>
       </div>
@@ -392,7 +392,7 @@ import { useRouter } from 'vue-router';
 const userStore = useUserStore();
 const router = useRouter();
 
-// 状态管理
+// State
 const currentFilter = ref('all');
 const showRejectDialog = ref(false);
 const showTaskDetailDialog = ref(false);
@@ -400,7 +400,7 @@ const rejectComment = ref('');
 const currentTask = ref(null);
 const activeTab = ref('tasks'); // 'tasks', 'merchants', 'stats'
 
-// 统计
+// Stats
 const stats = ref({
   pending: 0,
   processing: 0,
@@ -408,20 +408,20 @@ const stats = ref({
   rejected: 0
 });
 
-// 计算属性
+// Computed
 const isLoggedIn = computed(() => userStore.isLoggedIn);
 const username = computed(() => userStore.username);
 
-// 状态标签
+// Status tabs
 const statusTabs = [
-  { key: 'all', label: '全部' },
-  { key: 'pending', label: '待处理' },
-  { key: 'processing', label: '处理中' },
-  { key: 'approved', label: '已通过' },
-  { key: 'rejected', label: '已拒绝' }
+  { key: 'all', label: 'All' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'processing', label: 'In Progress' },
+  { key: 'approved', label: 'Approved' },
+  { key: 'rejected', label: 'Rejected' }
 ];
 
-// 任务数据
+// Data
 const tasks = ref([]);
 const merchants = ref([]);
 const statsData = ref({
@@ -430,10 +430,10 @@ const statsData = ref({
   totalRevenue: 0
 });
 
-// 错误状态
+// Error state
 const taskError = ref(null);
 
-// 过滤任务
+// Filter
 const filteredTasks = computed(() => {
   if (currentFilter.value === 'all') {
     return tasks.value;
@@ -441,76 +441,76 @@ const filteredTasks = computed(() => {
   return tasks.value.filter(task => task.status === currentFilter.value);
 });
 
-// 退出登录
+// Logout
 const handleLogout = async () => {
   await userStore.logout();
   router.push({ name: 'Home' });
 };
 
-// 获取任务列表
+// Fetch tasks
 const fetchTasks = async () => {
   try {
-    // 清除之前的错误状态
+    // reset error state
     taskError.value = null;
     
-    console.log('[Admin] 开始获取任务列表...');
-    // 使用查询字符串方式传递参数
+    console.log('[Admin] Start fetching tasks...');
+    // pass params via query string
     const response = await api.get('/api/admin/task?pageNum=1&pageSize=100');
     console.log('[Admin] Tasks response:', response);
     console.log('[Admin] Tasks response.data:', response.data);
     console.log('[Admin] Tasks response.data.data:', response.data?.data);
     
-    // 检查多种响应格式
+    // handle multiple response formats
     if (response.data?.code === 1 || response.data?.code === 20000) {
       const pageData = response.data.data;
       
-      // 如果data为null或undefined
+      // data null/undefined
       if (pageData === null || pageData === undefined) {
-        console.warn('[Admin] 后端返回的data为null或undefined');
+        console.warn('[Admin] data is null/undefined');
         tasks.value = [];
         updateStats();
         return;
       }
       
-      // 如果是分页数据，取records
+      // paged data: use records
       if (pageData.records && Array.isArray(pageData.records)) {
-        console.log('[Admin] 找到分页数据，records数量:', pageData.records.length);
+        console.log('[Admin] paged records:', pageData.records.length);
         tasks.value = pageData.records.map(task => {
-          // 解析任务数据
+          // parse task data
           let taskData = {};
           try {
             if (task.data) {
               taskData = typeof task.data === 'string' ? JSON.parse(task.data) : task.data;
             }
           } catch (e) {
-            console.warn('[Admin] 解析任务数据失败:', e);
+            console.warn('[Admin] failed to parse task.data:', e);
           }
           
           return {
           id: task.id,
           title: task.title,
           type: task.type,
-          typeLabel: '商家注册',
+          typeLabel: 'Merchant Registration',
           status: getStatusKey(task.status),
           statusKey: getStatusKey(task.status),
           statusLabel: getStatusLabel(task.status),
           applicant: task.applicant,
-            shopName: taskData.shopName || taskData.name || '未知商家',
-            phone: taskData.phone || '未知',
-            address: taskData.address || '未知',
+            shopName: taskData.shopName || taskData.name || 'Unknown Merchant',
+            phone: taskData.phone || 'Unknown',
+            address: taskData.address || 'Unknown',
             businessLicense: taskData.businessLicense || '',
             latitude: taskData.latitude || null,
             longitude: taskData.longitude || null,
             time: formatTime(task.startTime),
-            rawData: task // 保存原始数据以便查看详情
+            rawData: task
           };
         });
         
-        // 更新统计
+        // update stats
         updateStats();
       } else if (Array.isArray(pageData)) {
-        // 如果直接返回数组
-        console.log('[Admin] 找到数组数据，数量:', pageData.length);
+        // array response
+        console.log('[Admin] array data, length:', pageData.length);
         tasks.value = pageData.map(task => {
           let taskData = {};
           try {
@@ -518,21 +518,21 @@ const fetchTasks = async () => {
               taskData = typeof task.data === 'string' ? JSON.parse(task.data) : task.data;
             }
           } catch (e) {
-            console.warn('[Admin] 解析任务数据失败:', e);
+            console.warn('[Admin] failed to parse task.data:', e);
           }
           
           return {
             id: task.id,
             title: task.title,
             type: task.type,
-            typeLabel: '商家注册',
+            typeLabel: 'Merchant Registration',
             status: getStatusKey(task.status),
             statusKey: getStatusKey(task.status),
             statusLabel: getStatusLabel(task.status),
             applicant: task.applicant,
-            shopName: taskData.shopName || taskData.name || '未知商家',
-            phone: taskData.phone || '未知',
-            address: taskData.address || '未知',
+            shopName: taskData.shopName || taskData.name || 'Unknown Merchant',
+            phone: taskData.phone || 'Unknown',
+            address: taskData.address || 'Unknown',
             businessLicense: taskData.businessLicense || '',
             latitude: taskData.latitude || null,
             longitude: taskData.longitude || null,
@@ -542,18 +542,18 @@ const fetchTasks = async () => {
         });
         updateStats();
       } else {
-        console.warn('[Admin] 数据格式不符合预期:', pageData);
+        console.warn('[Admin] unexpected data format:', pageData);
         tasks.value = [];
         updateStats();
       }
     } else {
-      console.warn('[Admin] 响应码不正确:', response.data?.code);
+      console.warn('[Admin] response code not ok:', response.data?.code);
       tasks.value = [];
       updateStats();
     }
   } catch (error) {
-    console.error('[Admin] 获取任务失败:', error);
-    console.error('[Admin] 错误详情:', {
+    console.error('[Admin] fetch tasks failed:', error);
+    console.error('[Admin] error detail:', {
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
@@ -561,19 +561,19 @@ const fetchTasks = async () => {
       url: error.config?.url,
       params: error.config?.params
     });
-    // 打印完整的错误响应数据
+    // show full response
     if (error.response?.data) {
-      console.error('[Admin] 后端错误响应:', JSON.stringify(error.response.data, null, 2));
+      console.error('[Admin] backend error response:', JSON.stringify(error.response.data, null, 2));
     }
     
-    // 检查是否是数据库错误（缺少 comment 列）
+    // detect possible DB error (missing column)
     const errorMessage = error.response?.data?.message || error.message;
     if (errorMessage && errorMessage.includes('Unknown column \'comment\'')) {
-      taskError.value = '数据库架构错误：admin_task 表缺少 comment 列。请联系后端开发人员修复数据库。';
+      taskError.value = 'Database schema error: admin_task.comment column missing. Please contact backend to fix DB.';
     } else if (error.response?.status === 400) {
-      taskError.value = `获取任务失败：${errorMessage || '未知错误'}`;
+      taskError.value = `Failed to fetch tasks: ${errorMessage || 'Unknown error'}`;
     } else {
-      taskError.value = `获取任务失败：${errorMessage || '网络错误，请稍后重试'}`;
+      taskError.value = `Failed to fetch tasks: ${errorMessage || 'Network error, please try again later'}`;
     }
     
     tasks.value = [];
@@ -581,7 +581,7 @@ const fetchTasks = async () => {
   }
 };
 
-// 获取状态键
+// Status key
 const getStatusKey = (status) => {
   const statusMap = {
     1: 'pending',
@@ -592,18 +592,18 @@ const getStatusKey = (status) => {
   return statusMap[status] || 'pending';
 };
 
-// 获取状态标签
+// Status label
 const getStatusLabel = (status) => {
   const labelMap = {
-    1: '待处理',
-    2: '处理中',
-    3: '已通过',
-    4: '已拒绝'
+    1: 'Pending',
+    2: 'In Progress',
+    3: 'Approved',
+    4: 'Rejected'
   };
-  return labelMap[status] || '待处理';
+  return labelMap[status] || 'Pending';
 };
 
-// 更新统计
+// Update stats
 const updateStats = () => {
   stats.value = {
     pending: tasks.value.filter(t => t.status === 'pending').length,
@@ -613,7 +613,7 @@ const updateStats = () => {
   };
 };
 
-// 格式化时间
+// Format time
 const formatTime = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -621,125 +621,125 @@ const formatTime = (dateString) => {
   const diff = now - date;
   const hours = Math.floor(diff / (1000 * 60 * 60));
   
-  if (hours < 1) return '刚刚';
-  if (hours < 24) return `${hours}小时前`;
+  if (hours < 1) return 'just now';
+  if (hours < 24) return `${hours} hours ago`;
   
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}天前`;
+  if (days < 7) return `${days} days ago`;
   
-  return date.toLocaleDateString('zh-CN');
+  return date.toLocaleDateString('en-US');
 };
 
-// 领取任务
+// Claim task
 const claimTask = async (taskId) => {
   try {
     await api.post(`/api/admin/task/${taskId}/claim`);
     await fetchTasks();
-    alert('任务领取成功！');
-    // 如果是从详情弹窗领取的，关闭弹窗
+    alert('Task claimed!');
+    // close modal if from details
     if (showTaskDetailDialog.value) {
       showTaskDetailDialog.value = false;
     }
   } catch (error) {
-    console.error('领取任务失败:', error);
-    alert('领取任务失败：' + (error.response?.data?.message || error.message));
+    console.error('Claim task failed:', error);
+    alert('Failed to claim: ' + (error.response?.data?.message || error.message));
   }
 };
 
-// 批准任务
+// Approve task
 const approveTask = async (taskId) => {
-  if (!confirm('确定要批准这个商家注册申请吗？')) return;
+  if (!confirm('Are you sure you want to approve this merchant registration?')) return;
   
   try {
-    // 批准任务（后端会自动更新merchant状态和用户角色）
+    // Approve (backend updates merchant status and user role)
     await api.post(`/api/admin/task/${taskId}/approve`);
-    console.log('[Admin] ✅ 任务已批准，后端会自动更新商家状态和用户角色');
+    console.log('[Admin] ✅ Approved, backend will update merchant status and user role');
     
-    // 刷新任务列表
+    // refresh
     await fetchTasks();
-    alert('任务已批准！商家现在可以正常登录了。');
+    alert('Task approved! Merchant can now login.');
     
-    // 如果是从详情弹窗批准的，关闭弹窗
+    // close modal
     if (showTaskDetailDialog.value) {
       showTaskDetailDialog.value = false;
     }
   } catch (error) {
-    console.error('批准任务失败:', error);
-    alert('批准任务失败：' + (error.response?.data?.message || error.message));
+    console.error('Approve task failed:', error);
+    alert('Failed to approve: ' + (error.response?.data?.message || error.message));
   }
 };
 
-// 显示拒绝弹窗
+// Show reject
 const showRejectModal = (task) => {
   currentTask.value = task;
   rejectComment.value = '';
   showRejectDialog.value = true;
 };
 
-// 确认拒绝
+// Confirm reject
 const confirmReject = async () => {
   if (!rejectComment.value.trim()) {
-    alert('请输入拒绝原因');
+    alert('Please enter a rejection reason');
     return;
   }
   
-  if (!confirm('确定要拒绝这个商家注册申请吗？')) return;
+  if (!confirm('Are you sure you want to reject this merchant registration?')) return;
   
   try {
-    // 修复：使用查询参数而不是请求体
+    // use query param
     await api.post(`/api/admin/task/${currentTask.value.id}/reject?comment=${encodeURIComponent(rejectComment.value)}`);
     showRejectDialog.value = false;
     await fetchTasks();
-    alert('任务已拒绝！');
+    alert('Task rejected!');
   } catch (error) {
-    console.error('拒绝任务失败:', error);
-    alert('拒绝任务失败：' + (error.response?.data?.message || error.message));
+    console.error('Reject task failed:', error);
+    alert('Failed to reject: ' + (error.response?.data?.message || error.message));
   }
 };
 
-// 查看详情
+// View details
 const viewDetails = (task) => {
-  // 显示任务详情弹窗
+  // show modal
   currentTask.value = task;
   showTaskDetailDialog.value = true;
 };
 
-// 格式化日期时间
+// Format datetime
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleString('zh-CN');
+  return date.toLocaleString('en-US');
 };
 
-// 获取商家列表 - 从数据库读取
+// Fetch merchant list - DB
 const fetchMerchants = async () => {
   try {
-    console.log('[Admin] 开始获取商家列表（从数据库）...');
+    console.log('[Admin] Fetching merchants (DB)...');
     
-    // 根据后端 MerchantController，正确的路径是 /api/merchant（单数形式）
+    // correct path is /api/merchant
     const path = '/api/merchant';
-    console.log(`[Admin] 请求URL: ${path}`);
+    console.log(`[Admin] request URL: ${path}`);
     const response = await api.get(path);
-    console.log(`[Admin] ${path} 响应:`, response.data);
+    console.log(`[Admin] ${path} response:`, response.data);
     
-    // 检查响应格式 - 支持code === 1 或 code === 20000
+    // support code === 1 or 20000
     if (response.data?.code === 1 || response.data?.code === 20000) {
       const merchantsData = response.data.data;
       
-      // 如果data为null或undefined，可能是数据库中没有数据
+      // null/undefined => empty DB
       if (merchantsData === null || merchantsData === undefined) {
-        console.warn('[Admin] 后端返回的商家data为null或undefined（数据库可能为空）');
+        console.warn('[Admin] merchant data is null/undefined (DB may be empty)');
         merchants.value = [];
         return;
       }
       
-      // 后端返回的是List<MerchantDto>（从数据库查询）
+      // List<MerchantDto> from DB
       if (Array.isArray(merchantsData)) {
-        console.log('[Admin] ✅ 成功从数据库获取商家数据，数量:', merchantsData.length);
+        console.log('[Admin] ✅ merchants from DB, count:', merchantsData.length);
         merchants.value = merchantsData.map(merchant => ({
           id: merchant.id,
           name: merchant.name,
-          shopName: merchant.name, // 兼容字段
+          shopName: merchant.name,
           phone: merchant.phone,
           address: merchant.address,
           score: merchant.score || 0,
@@ -749,16 +749,16 @@ const fetchMerchants = async () => {
           longitude: merchant.longitude
         }));
       } else {
-        console.warn('[Admin] 商家列表数据格式异常，不是数组:', merchantsData);
+        console.warn('[Admin] merchants data not array:', merchantsData);
         merchants.value = [];
       }
     } else {
-      console.warn('[Admin] 商家列表接口返回错误:', response.data);
+      console.warn('[Admin] merchant list error:', response.data);
       merchants.value = [];
     }
   } catch (error) {
-    console.error('[Admin] ❌ 获取商家列表失败（接口错误）:', error);
-    console.error('[Admin] 错误详情:', {
+    console.error('[Admin] ❌ fetch merchants failed:', error);
+    console.error('[Admin] error detail:', {
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
@@ -766,45 +766,45 @@ const fetchMerchants = async () => {
       url: error.config?.url
     });
     
-    // 接口失败，显示空列表（只从数据库读取，不使用模拟数据）
-    console.warn('[Admin] ⚠️ 商家接口失败，无法从数据库读取数据');
+    // show empty
+    console.warn('[Admin] ⚠️ merchant API failed, cannot read from DB');
     merchants.value = [];
   }
 };
 
-// 获取统计数据
+// Fetch analytics
 const fetchStats = async () => {
   try {
-    // 获取订单统计（从数据库）- 使用正确的接口路径 /api/order/stats
+    // fetch order stats
     const ordersResponse = await api.get('/api/order/stats');
-    console.log('[Admin] 订单统计响应:', ordersResponse.data);
+    console.log('[Admin] order stats response:', ordersResponse.data);
     if (ordersResponse.data?.code === 1 || ordersResponse.data?.code === 20000) {
       const orderStats = ordersResponse.data.data;
       statsData.value.totalOrders = orderStats?.totalOrders || 0;
       statsData.value.totalRevenue = orderStats?.totalAmount || 0;
     }
     
-    // 获取商家数量（从数据库）
+    // fetch merchant count
     await fetchMerchants();
     statsData.value.totalMerchants = merchants.value.length;
-    console.log('[Admin] ✅ 统计数据（从数据库）:', statsData.value);
+    console.log('[Admin] ✅ analytics (DB):', statsData.value);
   } catch (error) {
-    console.error('[Admin] 获取统计数据失败:', error);
-    console.error('[Admin] 订单统计错误详情:', {
+    console.error('[Admin] fetch analytics failed:', error);
+    console.error('[Admin] order stats error detail:', {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data
     });
-    // 即使部分失败，也尝试获取其他数据
+    // try other parts
     try {
       await fetchMerchants();
       statsData.value.totalMerchants = merchants.value.length;
     } catch (e) {
-      console.error('[Admin] 获取商家数量失败:', e);
+      console.error('[Admin] fetch merchant count failed:', e);
       statsData.value.totalMerchants = 0;
     }
     
-    // 如果订单统计失败，使用默认值
+    // defaults
     if (!statsData.value.totalOrders && !statsData.value.totalRevenue) {
       statsData.value.totalOrders = 0;
       statsData.value.totalRevenue = 0;
@@ -812,20 +812,20 @@ const fetchStats = async () => {
   }
 };
 
-// 查看商家详情
+// View merchant detail
 const viewMerchantDetail = (merchant) => {
-  const name = merchant.name || merchant.shopName || '未知商家';
-  const phone = merchant.phone || '未知';
-  const address = merchant.address || '未知';
+  const name = merchant.name || merchant.shopName || 'Unknown Merchant';
+  const phone = merchant.phone || 'Unknown';
+  const address = merchant.address || 'Unknown';
   const score = merchant.score || 0;
-  const status = merchant.status || '未知';
-  alert(`商家详情：\nID：${merchant.id}\n名称：${name}\n联系方式：${phone}\n地址：${address}\n评分：${score}\n状态：${status}`);
+  const status = merchant.status || 'Unknown';
+  alert(`Merchant Detail:\nID: ${merchant.id}\nName: ${name}\nContact: ${phone}\nAddress: ${address}\nRating: ${score}\nStatus: ${status}`);
 };
 
-// 定时器引用
+// Timer
 let refreshTimer = null;
 
-// 根据当前tab刷新数据
+// Refresh by tab
 const refreshCurrentTab = () => {
   if (activeTab.value === 'tasks') {
     fetchTasks();
@@ -836,9 +836,9 @@ const refreshCurrentTab = () => {
   }
 };
 
-// 监听tab切换
+// Watch tab
 watch(activeTab, (newTab) => {
-  // 立即刷新新tab的数据
+  // refresh immediately
   if (newTab === 'merchants') {
     fetchMerchants();
   } else if (newTab === 'stats') {
@@ -848,24 +848,24 @@ watch(activeTab, (newTab) => {
   }
 });
 
-// 初始化
+// Init
 onMounted(() => {
-  // 直接加载任务列表（路由守卫已经确保用户已登录且是管理员）
+  // load tasks (guard ensures logged in and admin)
   fetchTasks();
   
-  // 设置定时器，每30秒刷新一次当前tab的数据
+  // set interval to refresh every 30s
   refreshTimer = setInterval(() => {
-    console.log('[Admin] 定时刷新数据...');
+    console.log('[Admin] refresh interval...');
     refreshCurrentTab();
   }, 30000); // 30秒 = 30000毫秒
 });
 
-// 组件卸载时清除定时器
+// Cleanup
 onUnmounted(() => {
   if (refreshTimer) {
     clearInterval(refreshTimer);
     refreshTimer = null;
-    console.log('[Admin] 定时器已清除');
+    console.log('[Admin] timer cleared');
   }
 });
 </script>

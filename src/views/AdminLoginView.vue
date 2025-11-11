@@ -3,12 +3,12 @@
     <div class="login-container">
       <div class="login-header">
         <h1 class="logo">🛍️ Magic Bag</h1>
-        <h2 class="title">管理员登录</h2>
+        <h2 class="title">Admin Login</h2>
       </div>
 
       <div class="login-form">
         <div class="form-group">
-          <label class="form-label">邮箱</label>
+          <label class="form-label">Email</label>
           <input 
             v-model="loginForm.username"
             type="text" 
@@ -19,7 +19,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">密码</label>
+          <label class="form-label">Password</label>
           <input 
             v-model="loginForm.password"
             type="password" 
@@ -29,19 +29,19 @@
           />
         </div>
 
-        <!-- 调试信息 -->
+        <!-- Debug Info -->
         <div class="debug-section">
-          <h3 class="debug-title">调试信息</h3>
+          <h3 class="debug-title">Debug Info</h3>
           
           <div class="debug-item">
-            <strong>当前状态:</strong> 
+            <strong>Status:</strong> 
             <span :class="['status-badge', isLoading ? 'loading' : 'ready']">
-              {{ isLoading ? '登录中...' : '就绪' }}
+              {{ isLoading ? 'Logging in...' : 'Ready' }}
             </span>
           </div>
 
           <div class="debug-item">
-            <strong>登录步骤:</strong>
+            <strong>Steps:</strong>
             <div class="steps">
               <div v-for="(step, index) in debugSteps" :key="index" class="step">
                 <span class="step-icon">{{ step.success ? '✅' : step.error ? '❌' : '⏳' }}</span>
@@ -52,17 +52,17 @@
           </div>
 
           <div v-if="errorMessage" class="debug-item error">
-            <strong>错误信息:</strong>
+            <strong>Error:</strong>
             <div class="error-box">{{ errorMessage }}</div>
           </div>
 
           <div v-if="successMessage" class="debug-item success">
-            <strong>成功信息:</strong>
+            <strong>Success:</strong>
             <div class="success-box">{{ successMessage }}</div>
           </div>
 
           <div v-if="responseData" class="debug-item">
-            <strong>响应数据:</strong>
+            <strong>Response:</strong>
             <pre class="response-box">{{ JSON.stringify(responseData, null, 2) }}</pre>
           </div>
         </div>
@@ -73,23 +73,23 @@
             @click="handleLogin" 
             :disabled="isLoading"
           >
-            {{ isLoading ? '登录中...' : '登录' }}
+            {{ isLoading ? 'Logging in...' : 'Login' }}
           </button>
           <button 
             class="btn btn-secondary" 
             @click="resetForm"
             :disabled="isLoading"
           >
-            重置
+            Reset
           </button>
         </div>
       </div>
 
       <div class="login-footer">
         <p class="links">
-          <router-link to="/admin/register">注册管理员</router-link>
+          <router-link to="/admin/register">Register Admin</router-link>
           <span> | </span>
-          <router-link to="/">返回首页</router-link>
+          <router-link to="/">Back to Home</router-link>
         </p>
       </div>
     </div>
@@ -117,14 +117,14 @@ const errorMessage = ref('');
 const successMessage = ref('');
 const responseData = ref(null);
 
-// 调试步骤
+// Steps (debug)
 const debugSteps = ref([
-  { text: '准备登录请求', success: false, error: false },
-  { text: '发送登录请求', success: false, error: false },
-  { text: '接收响应', success: false, error: false },
-  { text: '提取Token', success: false, error: false },
-  { text: '获取用户信息', success: false, error: false },
-  { text: '登录成功', success: false, error: false }
+  { text: 'Prepare login request', success: false, error: false },
+  { text: 'Send login request', success: false, error: false },
+  { text: 'Receive response', success: false, error: false },
+  { text: 'Extract token', success: false, error: false },
+  { text: 'Fetch user info', success: false, error: false },
+  { text: 'Login success', success: false, error: false }
 ]);
 
 // 更新步骤
@@ -169,15 +169,15 @@ const handleLogin = async () => {
   }));
 
   try {
-    // 步骤1: 准备登录请求
-    updateStep(0, true, false, '准备发送登录请求');
+    // Step 1
+    updateStep(0, true, false, 'Ready to send login request');
     console.log('[Admin Login] 准备登录:', {
       username: loginForm.username,
       passwordLength: loginForm.password.length
     });
 
-    // 步骤2: 发送登录请求
-    updateStep(1, true, false, '发送POST请求到 /api/auth/login');
+    // Step 2
+    updateStep(1, true, false, 'POST /api/auth/login');
     
     let response;
     try {
@@ -199,12 +199,12 @@ const handleLogin = async () => {
       throw apiError;
     }
 
-    // 步骤3: 接收响应
-    updateStep(2, true, false, `状态码: ${response.status}`);
+    // Step 3
+    updateStep(2, true, false, `Status: ${response.status}`);
     responseData.value = response.data;
 
-    // 步骤4: 提取Token
-    updateStep(3, true, false, '从响应头提取Token');
+    // Step 4
+    updateStep(3, true, false, 'Extract token from response');
     
     const receivedToken =
       response.headers?.['x-new-token'] ||
@@ -223,19 +223,19 @@ const handleLogin = async () => {
 
     if (!receivedToken) {
       updateStep(3, false, true, 'Token未找到');
-      errorMessage.value = '登录响应中未包含Token';
+      errorMessage.value = 'No token found in login response';
       throw new Error('Login response did not contain a token.');
     }
 
-    updateStep(3, true, false, `Token长度: ${receivedToken.length}`);
+    updateStep(3, true, false, `Token length: ${receivedToken.length}`);
 
-    // 保存token
+    // Save token
     localStorage.setItem('token', receivedToken);
     api.defaults.headers.common['Authorization'] = `Bearer ${receivedToken}`;
     console.log('[Admin Login] Token已保存到localStorage和axios headers');
 
-    // 步骤5: 获取用户信息
-    updateStep(4, true, false, '调用 /api/user 获取用户信息');
+    // Step 5
+    updateStep(4, true, false, 'GET /api/user to fetch profile');
     
     try {
       const userResponse = await api.get('/api/user');
@@ -243,35 +243,35 @@ const handleLogin = async () => {
       
       const userProfile = userResponse.data?.data;
       if (userProfile) {
-        updateStep(4, true, false, `用户: ${userProfile.username}, 角色: ${userProfile.role}`);
-        successMessage.value = `登录成功！用户: ${userProfile.username}, 角色: ${userProfile.role}`;
+        updateStep(4, true, false, `User: ${userProfile.username}, Role: ${userProfile.role}`);
+        successMessage.value = `Login successful! User: ${userProfile.username}, Role: ${userProfile.role}`;
         
-        // 步骤6: 登录成功
-        updateStep(5, true, false, '登录流程完成');
+        // Step 6
+        updateStep(5, true, false, 'Login flow finished');
         
         // 确保用户状态已更新
         await userStore.initialize();
         
-        // 立即跳转到admin界面
+        // redirect to admin
         console.log('[Admin Login] Redirecting to /admin, role:', userStore.role);
           router.push('/admin');
       } else {
-        updateStep(4, false, true, '用户信息为空');
-        errorMessage.value = '获取用户信息失败';
+        updateStep(4, false, true, 'User info is empty');
+        errorMessage.value = 'Failed to fetch user info';
       }
     } catch (userError) {
       console.error('[Admin Login] 获取用户信息失败:', userError);
-      updateStep(4, false, true, `错误: ${userError.message}`);
-      errorMessage.value = `获取用户信息失败: ${userError.message}`;
+      updateStep(4, false, true, `Error: ${userError.message}`);
+      errorMessage.value = `Failed to fetch user info: ${userError.message}`;
     }
 
   } catch (error) {
     console.error('[Admin Login] 登录失败:', error);
     
     if (error.response) {
-      errorMessage.value = `错误 (${error.response.status}): ${JSON.stringify(error.response.data, null, 2)}`;
+      errorMessage.value = `Error (${error.response.status}): ${JSON.stringify(error.response.data, null, 2)}`;
     } else {
-      errorMessage.value = `错误: ${error.message}`;
+      errorMessage.value = `Error: ${error.message}`;
     }
   } finally {
     isLoading.value = false;

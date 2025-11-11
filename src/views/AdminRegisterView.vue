@@ -3,12 +3,12 @@
     <div class="register-container">
       <div class="register-header">
         <h1 class="logo">🛍️ Magic Bag</h1>
-        <h2 class="title">管理员注册</h2>
+        <h2 class="title">Admin Registration</h2>
       </div>
 
       <div class="register-form">
         <div class="form-group">
-          <label class="form-label">邮箱</label>
+          <label class="form-label">Email</label>
           <input 
             v-model="form.username"
             type="email" 
@@ -18,7 +18,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">密码</label>
+          <label class="form-label">Password</label>
           <input 
             v-model="form.password"
             type="password" 
@@ -28,7 +28,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">确认密码</label>
+          <label class="form-label">Confirm Password</label>
           <input 
             v-model="form.confirmPassword"
             type="password" 
@@ -37,19 +37,19 @@
           />
         </div>
 
-        <!-- 调试信息 -->
+        <!-- Debug Info -->
         <div class="debug-section">
-          <h3 class="debug-title">调试信息</h3>
+          <h3 class="debug-title">Debug Info</h3>
           
           <div class="debug-item">
-            <strong>当前状态:</strong> 
+            <strong>Status:</strong> 
             <span :class="['status-badge', isLoading ? 'loading' : 'ready']">
-              {{ isLoading ? '注册中...' : '就绪' }}
+              {{ isLoading ? 'Registering...' : 'Ready' }}
             </span>
           </div>
 
           <div class="debug-item">
-            <strong>注册步骤:</strong>
+            <strong>Steps:</strong>
             <div class="steps">
               <div v-for="(step, index) in debugSteps" :key="index" class="step">
                 <span class="step-icon">{{ step.success ? '✅' : step.error ? '❌' : '⏳' }}</span>
@@ -60,17 +60,17 @@
           </div>
 
           <div v-if="errorMessage" class="debug-item error">
-            <strong>错误信息:</strong>
+            <strong>Error:</strong>
             <div class="error-box">{{ errorMessage }}</div>
           </div>
 
           <div v-if="successMessage" class="debug-item success">
-            <strong>成功信息:</strong>
+            <strong>Success:</strong>
             <div class="success-box">{{ successMessage }}</div>
           </div>
 
           <div v-if="responseData" class="debug-item">
-            <strong>响应数据:</strong>
+            <strong>Response:</strong>
             <pre class="response-box">{{ JSON.stringify(responseData, null, 2) }}</pre>
           </div>
         </div>
@@ -81,21 +81,21 @@
             @click="handleRegister" 
             :disabled="isLoading"
           >
-            {{ isLoading ? '注册中...' : '注册管理员' }}
+            {{ isLoading ? 'Registering...' : 'Register Admin' }}
           </button>
           <button 
             class="btn btn-secondary" 
             @click="resetForm"
             :disabled="isLoading"
           >
-            重置
+            Reset
           </button>
         </div>
       </div>
 
       <div class="register-footer">
         <p class="back-link">
-          <router-link to="/admin/login">← 返回登录</router-link>
+          <router-link to="/admin/login">← Back to Login</router-link>
         </p>
       </div>
     </div>
@@ -109,29 +109,29 @@ import { api } from '@/utils/api';
 
 const router = useRouter();
 
-// 表单数据
+// Form
 const form = reactive({
   username: 'admin@123456.com',
   password: '123456',
   confirmPassword: '123456'
 });
 
-// 状态
+// State
 const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const responseData = ref(null);
 
-// 调试步骤
+// Steps (debug)
 const debugSteps = ref([
-  { text: '验证表单', success: false, error: false },
-  { text: '准备注册请求', success: false, error: false },
-  { text: '发送注册请求', success: false, error: false },
-  { text: '接收响应', success: false, error: false },
-  { text: '注册成功', success: false, error: false }
+  { text: 'Validate form', success: false, error: false },
+  { text: 'Prepare request', success: false, error: false },
+  { text: 'Send request', success: false, error: false },
+  { text: 'Receive response', success: false, error: false },
+  { text: 'Registration success', success: false, error: false }
 ]);
 
-// 更新步骤
+// Update step
 const updateStep = (index, success, error, details = '') => {
   debugSteps.value[index] = {
     ...debugSteps.value[index],
@@ -141,7 +141,7 @@ const updateStep = (index, success, error, details = '') => {
   };
 };
 
-// 重置表单
+// Reset form
 const resetForm = () => {
   form.username = 'admin@123456.com';
   form.password = '123456';
@@ -157,15 +157,15 @@ const resetForm = () => {
   }));
 };
 
-// 注册处理
+// Handle register
 const handleRegister = async () => {
-  // 重置状态
+  // reset state
   isLoading.value = true;
   errorMessage.value = '';
   successMessage.value = '';
   responseData.value = null;
   
-  // 重置步骤
+  // reset steps
   debugSteps.value = debugSteps.value.map(step => ({
     ...step,
     success: false,
@@ -174,42 +174,42 @@ const handleRegister = async () => {
   }));
 
   try {
-    // 步骤1: 验证表单
-    updateStep(0, true, false, '验证表单数据');
+    // Step 1: validate
+    updateStep(0, true, false, 'Validate form data');
     
     if (!form.username || !form.password || !form.confirmPassword) {
-      updateStep(0, false, true, '请填写所有字段');
-      errorMessage.value = '请填写所有字段';
+      updateStep(0, false, true, 'Please fill in all fields');
+      errorMessage.value = 'Please fill in all fields';
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      updateStep(0, false, true, '两次密码不一致');
-      errorMessage.value = '两次密码不一致';
+      updateStep(0, false, true, 'Passwords do not match');
+      errorMessage.value = 'Passwords do not match';
       return;
     }
 
     if (form.password.length < 6) {
-      updateStep(0, false, true, '密码长度至少6位');
-      errorMessage.value = '密码长度至少6位';
+      updateStep(0, false, true, 'Password must be at least 6 characters');
+      errorMessage.value = 'Password must be at least 6 characters';
       return;
     }
 
-    updateStep(0, true, false, '表单验证通过');
+    updateStep(0, true, false, 'Form validation passed');
 
-    // 步骤2: 准备注册请求
-    updateStep(1, true, false, '准备注册数据');
+    // Step 2: prepare
+    updateStep(1, true, false, 'Prepare registration data');
     
     const payload = {
       username: form.username,
       password: form.password,
-      role: 'ADMIN' // 🔧 设置为管理员角色
+      role: 'ADMIN' // set role to admin
     };
 
     console.log('[Admin Register] 注册数据:', payload);
 
-    // 步骤3: 发送注册请求
-    updateStep(2, true, false, '发送POST请求到 /api/user/register');
+    // Step 3: send
+    updateStep(2, true, false, 'POST /api/user/register');
     
     let response;
     try {
@@ -217,35 +217,35 @@ const handleRegister = async () => {
       console.log('[Admin Register] 注册响应:', response);
     } catch (apiError) {
       console.error('[Admin Register] API错误:', apiError);
-      updateStep(2, false, true, `API错误: ${apiError.message}`);
+      updateStep(2, false, true, `API error: ${apiError.message}`);
       
       if (apiError.response) {
-        errorMessage.value = `API错误 (${apiError.response.status}): ${JSON.stringify(apiError.response.data)}`;
+        errorMessage.value = `API error (${apiError.response.status}): ${JSON.stringify(apiError.response.data)}`;
         responseData.value = apiError.response.data;
       } else {
-        errorMessage.value = `网络错误: ${apiError.message}`;
+        errorMessage.value = `Network error: ${apiError.message}`;
       }
       throw apiError;
     }
 
-    // 步骤4: 接收响应
-    updateStep(3, true, false, `状态码: ${response.status}`);
+    // Step 4: receive
+    updateStep(3, true, false, `Status: ${response.status}`);
     responseData.value = response.data;
 
-    // 步骤5: 注册成功
-    updateStep(4, true, false, '管理员注册成功');
-    successMessage.value = `管理员注册成功！邮箱: ${form.username}\n注意：账号需要激活后才能登录。`;
+    // Step 5: success
+    updateStep(4, true, false, 'Admin registration successful');
+    successMessage.value = `Admin registration successful! Email: ${form.username}\nNote: The account must be activated before login.`;
 
-    // 提示用户需要激活
-    alert('注册成功！但账号需要激活后才能登录。\n\n请在数据库中执行以下SQL来激活账号：\n\nUPDATE magicbag.users SET status = 1 WHERE username = \'' + form.username + '\';');
+    // Activation notice
+    alert('Registration successful! The account must be activated before login.\n\nExecute the following SQL to activate:\n\nUPDATE magicbag.users SET status = 1 WHERE username = \'' + form.username + '\';');
 
   } catch (error) {
     console.error('[Admin Register] 注册失败:', error);
     
     if (error.response) {
-      errorMessage.value = `错误 (${error.response.status}): ${JSON.stringify(error.response.data, null, 2)}`;
+      errorMessage.value = `Error (${error.response.status}): ${JSON.stringify(error.response.data, null, 2)}`;
     } else {
-      errorMessage.value = `错误: ${error.message}`;
+      errorMessage.value = `Error: ${error.message}`;
     }
   } finally {
     isLoading.value = false;
