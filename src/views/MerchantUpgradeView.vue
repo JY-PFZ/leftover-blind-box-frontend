@@ -3,54 +3,54 @@
     <div class="container">
       <div class="upgrade-card">
         <div class="header">
-          <h1 class="title">升级为商家</h1>
-          <p class="subtitle">填写您的商家信息，申请成为商家</p>
+          <h1 class="title">Upgrade to Merchant</h1>
+          <p class="subtitle">Share your business details to apply</p>
         </div>
 
         <div v-if="!userStore.isLoggedIn" class="login-prompt">
           <div class="alert alert-warning">
-            <p>请先登录后再申请成为商家</p>
-            <button @click="goToLogin" class="btn btn-primary">去登录</button>
+            <p>Please sign in before applying to become a merchant.</p>
+            <button @click="goToLogin" class="btn btn-primary">Go to Login</button>
           </div>
         </div>
 
         <div v-else-if="userStore.role !== 'customer'" class="status-info">
           <div class="alert alert-info">
-            <p>您当前的角色是：<strong>{{ userStore.role }}</strong></p>
-            <p v-if="userStore.role === 'merchant'" class="success-text">您已经是商家了！</p>
+            <p>Your current role: <strong>{{ userStore.role }}</strong></p>
+            <p v-if="userStore.role === 'merchant'" class="success-text">You are already a merchant.</p>
           </div>
         </div>
 
         <form v-else @submit.prevent="handleSubmit" class="upgrade-form">
           <div class="form-section">
-            <h3 class="section-title">商家基本信息</h3>
+            <h3 class="section-title">Merchant Information</h3>
             
             <div class="form-group">
-              <label for="merchantName">商家名称 *</label>
+              <label for="merchantName">Business Name *</label>
               <input
                 id="merchantName"
                 v-model.trim="form.merchantName"
                 type="text"
-                placeholder="请输入商家名称"
+                placeholder="Enter your business name"
                 required
                 class="form-input"
               />
             </div>
 
             <div class="form-group">
-              <label for="address">商家地址 *</label>
+              <label for="address">Business Address *</label>
               <input
                 id="address"
                 v-model.trim="form.address"
                 type="text"
-                placeholder="请输入商家地址"
+                placeholder="Enter your business address"
                 required
                 class="form-input"
               />
             </div>
 
             <div class="form-group">
-              <label>店铺位置 *</label>
+              <label>Store Location *</label>
               <div class="location-section">
                 <button
                   type="button"
@@ -62,23 +62,23 @@
                 </button>
                 <div v-if="form.latitude && form.longitude" class="location-info">
                   <p class="location-text">
-                    经度: {{ form.latitude.toFixed(4) }}, 
-                    纬度: {{ form.longitude.toFixed(4) }}
+                    Latitude: {{ form.latitude.toFixed(4) }}, 
+                    Longitude: {{ form.longitude.toFixed(4) }}
                   </p>
                 </div>
               </div>
             </div>
 
             <div class="form-group">
-              <label for="phone">联系电话（可选）</label>
+              <label for="phone">Contact Number (optional)</label>
               <input
                 id="phone"
                 v-model.trim="form.phone"
                 type="tel"
-                placeholder="请输入8位新加坡手机号（如：81234567）"
+                placeholder="Enter 8-digit SG phone (e.g. 81234567)"
                 class="form-input"
               />
-              <small class="form-hint">格式：8位数字，以8或9开头（如：81234567）</small>
+              <small class="form-hint">Format: 8 digits, starting with 8 or 9 (e.g. 81234567)</small>
             </div>
           </div>
 
@@ -88,14 +88,14 @@
               :disabled="isSubmitting || !isFormValid"
               class="btn btn-primary btn-submit"
             >
-              {{ isSubmitting ? '提交中...' : '提交申请' }}
+              {{ isSubmitting ? 'Submitting...' : 'Submit Application' }}
             </button>
             <button
               type="button"
               @click="goBack"
               class="btn btn-secondary"
             >
-              取消
+              Cancel
             </button>
           </div>
 
@@ -130,7 +130,7 @@ const form = ref({
 });
 
 const loadingLocation = ref(false);
-const locationStatus = ref('📍 获取店铺位置');
+const locationStatus = ref('📍 Get store location');
 const isSubmitting = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
@@ -144,25 +144,25 @@ const isFormValid = computed(() => {
 
 const getLocation = async () => {
   if (!navigator.geolocation) {
-    errorMsg.value = '您的浏览器不支持地理位置功能';
+    errorMsg.value = 'Your browser does not support geolocation.';
     return;
   }
 
   loadingLocation.value = true;
-  locationStatus.value = '获取中...';
+  locationStatus.value = 'Fetching...';
   errorMsg.value = '';
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
       form.value.latitude = position.coords.latitude;
       form.value.longitude = position.coords.longitude;
-      locationStatus.value = '✅ 位置已获取';
+      locationStatus.value = '✅ Location acquired';
       loadingLocation.value = false;
     },
     (err) => {
-      console.error('获取位置失败:', err);
-      locationStatus.value = '❌ 获取失败，请重试';
-      errorMsg.value = '无法获取位置信息，请检查浏览器权限设置';
+      console.error('Failed to get location:', err);
+      locationStatus.value = '❌ Failed to fetch location';
+      errorMsg.value = 'Unable to fetch location. Please review your browser permissions and try again.';
       loadingLocation.value = false;
     }
   );
@@ -170,7 +170,7 @@ const getLocation = async () => {
 
 const handleSubmit = async () => {
   if (!isFormValid.value) {
-    errorMsg.value = '请填写所有必填项';
+    errorMsg.value = 'Please fill in all required fields.';
     return;
   }
 
@@ -179,16 +179,16 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    // 确保用户已登录（后端会从token中获取userId，不需要前端传递）
+    // Ensure user is authenticated (backend derives userId from token)
     if (!userStore.isLoggedIn) {
-      errorMsg.value = '请先登录';
+      errorMsg.value = 'Please sign in first.';
       isSubmitting.value = false;
       return;
     }
     
     const result = await merchantStore.registerMerchant({
-      username: userStore.username, // 使用当前登录用户的用户名（仅用于日志）
-      password: '', // 不需要密码，因为用户已经登录
+      username: userStore.username, // logging helper
+      password: '', // not needed, user already authenticated
       merchantName: form.value.merchantName,
       address: form.value.address,
       latitude: form.value.latitude,
@@ -197,17 +197,17 @@ const handleSubmit = async () => {
     });
 
     if (result.success) {
-      successMsg.value = '✅ 申请提交成功！请等待管理员审核。';
-      // 3秒后跳转到个人中心
+      successMsg.value = '✅ Application submitted. Await admin approval.';
+      // redirect to profile after 3 seconds
       setTimeout(() => {
         router.push('/profile');
       }, 3000);
     } else {
-      errorMsg.value = result.message || '申请提交失败，请重试';
+      errorMsg.value = result.message || 'Submission failed. Please try again.';
     }
   } catch (error) {
-    console.error('提交申请失败:', error);
-    errorMsg.value = '提交申请时发生错误，请重试';
+    console.error('Merchant application failed:', error);
+    errorMsg.value = 'An unexpected error occurred. Please retry.';
   } finally {
     isSubmitting.value = false;
   }
@@ -219,7 +219,7 @@ const goBack = () => {
 
 const goToLogin = () => {
   router.push('/');
-  // 触发显示登录模态框的事件
+  // Trigger login modal display
   setTimeout(() => {
     window.dispatchEvent(new Event('open-login'));
   }, 100);
