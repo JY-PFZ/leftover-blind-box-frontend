@@ -444,7 +444,9 @@ async function processPayment() {
       
       await cart.fetchCart();
       closePaymentModal();
-      window.location.href = checkoutUrl;
+      const url = new URL(checkoutUrl);
+      url.searchParams.set('locale', 'en');
+      window.location.href = url.toString();
     } else {
       console.error("❌ Failed to create checkout session:", paymentResponse.data);
       console.error("Response details:", {

@@ -253,8 +253,10 @@ const confirmPayment = async (orderId) => {
         console.log('[OrderHistoryView] Token saved to sessionStorage for payment verification');
       }
       
-      // 跳转到 Stripe 支付页面
-      window.location.href = checkoutUrl;
+      // 跳转到 Stripe 支付页面（强制英文界面）
+      const url = new URL(checkoutUrl);
+      url.searchParams.set('locale', 'en');
+      window.location.href = url.toString();
     } else {
       alert(`创建支付会话失败: ${response.data?.message || 'Unknown error'}`);
     }
