@@ -18,10 +18,10 @@
     <!-- Customer/Guest Navigation Bar -->
     <nav v-else class="navbar">
       <div class="logo">Magic Bag</div>
-      <ul class="nav-links">
+      <ul class="nav-links">
         <li><RouterLink to="/">Home</RouterLink></li>
+        <li><RouterLink to="/shop">Shop</RouterLink></li>
         <li><RouterLink to="/about">About Us</RouterLink></li>
-        <li><RouterLink to="/">Shop</RouterLink></li>
         <li><RouterLink to="/profile">My Profile</RouterLink></li>
         <li><RouterLink to="/order-history">Orders</RouterLink></li>
       </ul>

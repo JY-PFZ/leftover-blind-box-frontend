@@ -82,10 +82,26 @@ export const useMerchantStore = defineStore('merchant', () => {
         }
       }
       
+      // 🔧 明确排除 id 和 userId 字段（防止意外包含）
+      const finalRequestData = {
+        name: requestData.name,
+        address: requestData.address,
+        ...(requestData.phone && { phone: requestData.phone }),
+        ...(requestData.latitude !== null && requestData.latitude !== undefined && { latitude: requestData.latitude }),
+        ...(requestData.longitude !== null && requestData.longitude !== undefined && { longitude: requestData.longitude }),
+        ...(requestData.businessLicense && { businessLicense: requestData.businessLicense })
+      };
+      
+      // 🔧 确保不包含 id 和 userId
+      delete finalRequestData.id;
+      delete finalRequestData.userId;
+      
       console.log('[MerchantStore] 步骤3: 最终请求数据');
-      console.log('[MerchantStore] 完整请求数据:', JSON.stringify(requestData, null, 2));
+      console.log('[MerchantStore] 完整请求数据:', JSON.stringify(finalRequestData, null, 2));
       console.log('[MerchantStore] ✅ 确认：请求数据中不包含userId和id字段（后端会从token中获取userId并自动生成id）');
-      console.log('[MerchantStore] 请求数据的所有键:', Object.keys(requestData));
+      console.log('[MerchantStore] 请求数据的所有键:', Object.keys(finalRequestData));
+      console.log('[MerchantStore] 🔍 验证：id字段是否存在？', 'id' in finalRequestData ? '❌ 存在（错误！）' : '✅ 不存在（正确）');
+      console.log('[MerchantStore] 🔍 验证：userId字段是否存在？', 'userId' in finalRequestData ? '❌ 存在（错误！）' : '✅ 不存在（正确）');
       
       // 🔧 第三步：发送请求
       // 根据后端 MerchantController，正确的路径是 /api/merchant/register（单数形式）
@@ -98,9 +114,10 @@ export const useMerchantStore = defineStore('merchant', () => {
           console.log(`[MerchantStore] 步骤4: 尝试发送POST请求到 ${path}`);
           console.log("[MerchantStore] 请求URL:", path);
           console.log("[MerchantStore] 请求方法: POST");
-          console.log("[MerchantStore] 请求体:", requestData);
+          console.log("[MerchantStore] 请求体（JSON字符串）:", JSON.stringify(finalRequestData, null, 2));
+          console.log("[MerchantStore] 请求体（对象）:", finalRequestData);
           
-          response = await api.post(path, requestData);
+          response = await api.post(path, finalRequestData);
           console.log(`[MerchantStore] ${path} 响应成功:`, response.status);
           break; // 如果成功，跳出循环
         } catch (error) {
@@ -117,13 +134,20 @@ export const useMerchantStore = defineStore('merchant', () => {
       
       console.log("[MerchantStore] 响应状态:", response.status);
       console.log("[MerchantStore] 响应数据:", response.data);
+      console.log("[MerchantStore] 响应 code:", response.data?.code);
+      console.log("[MerchantStore] 响应 message:", response.data?.message);
 
       const successCode = response.data?.code == 1 || response.data?.code == 20000;
       if (successCode) {
         console.log("[MerchantStore] Merchant registration successful.", response.data.data);
         return { success: true };
       } else {
-        throw new Error(response.data?.message || 'Registration failed due to server logic.');
+        // 如果响应状态是 200 但 code 不是成功码，说明后端逻辑错误
+        const errorMsg = response.data?.message || 'Registration failed due to server logic.';
+        console.error('[MerchantStore] ⚠️ 后端返回了 200 状态码，但 code 不是成功码:', response.data?.code);
+        console.error('[MerchantStore] ⚠️ 错误消息:', errorMsg);
+        console.error('[MerchantStore] ⚠️ 这通常是后端验证或业务逻辑问题，请检查后端代码');
+        throw new Error(errorMsg);
       }
     } catch (err) {
       console.error('[MerchantStore] Error registering merchant:', err);

@@ -7,6 +7,15 @@ const props = defineProps({
 })
 
 const set = (v) => props.onChange?.(v)
+
+function safeClick(mode) {
+  try {
+    console.log('[SortBar] Click:', mode, 'current sort prop =', props.sort)
+    props.onChange?.(mode)
+  } catch (err) {
+    console.error('[SortBar] Click error for', mode, err)
+  }
+}
 </script>
 
 <template>
@@ -14,7 +23,7 @@ const set = (v) => props.onChange?.(v)
     <span class="mr-1 text-sm font-medium text-ink-700">Sort by</span>
     <button
       :aria-pressed="sort==='default'"
-      @click="set('default')"
+      @click="safeClick('default')"
       class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
       :class="sort==='default' ? 'border-brand text-brand bg-brand-50' : 'border-ink-300 text-ink-700 hover:bg-ink-300/20'"
     >
@@ -22,7 +31,7 @@ const set = (v) => props.onChange?.(v)
     </button>
     <button
       :aria-pressed="sort==='priceAsc'"
-      @click="set('priceAsc')"
+      @click="safeClick('priceAsc')"
       class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
       :class="sort==='priceAsc' ? 'border-brand text-brand bg-brand-50' : 'border-ink-300 text-ink-700 hover:bg-ink-300/20'"
     >
@@ -30,7 +39,7 @@ const set = (v) => props.onChange?.(v)
     </button>
     <button
       :aria-pressed="sort==='priceDesc'"
-      @click="set('priceDesc')"
+      @click="safeClick('priceDesc')"
       class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
       :class="sort==='priceDesc' ? 'border-brand text-brand bg-brand-50' : 'border-ink-300 text-ink-700 hover:bg-ink-300/20'"
     >
@@ -38,11 +47,10 @@ const set = (v) => props.onChange?.(v)
     </button>
     <button
       :aria-pressed="sort==='distance'"
-      @click="userLocation && !isDistanceLoading ? set('distance') : null"
-      :disabled="!userLocation || isDistanceLoading"
-      class="rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-      :class="sort==='distance' && userLocation ? 'border-brand text-brand bg-brand-50' : 'border-ink-300/60 text-ink-500 hover:bg-ink-300/20'"
-      :title="isDistanceLoading ? 'Locating...' : (!userLocation ? 'Location not available' : 'Sort by distance')"
+      @click="safeClick('distance')"
+      class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+      :class="sort==='distance' ? 'border-brand text-brand bg-brand-50' : 'border-ink-300/60 text-ink-500 hover:bg-ink-300/20'"
+      :title="'Sort by distance (temporarily behaves as default)'"
     >
       {{ isDistanceLoading ? 'Locating...' : 'Distance (near)' }}
     </button>

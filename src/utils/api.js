@@ -70,6 +70,25 @@ api.interceptors.request.use(
       console.log('[API Interceptor] Final Authorization header:', (config.headers.Authorization || config.headers.authorization).substring(0, 30) + '...');
     }
     
+    // 🔧 调试：对于商家注册接口，输出请求体以便后端检查
+    if (config.url?.includes('/merchant/register')) {
+      console.log('[API Interceptor] 🔍 商家注册请求体检查:');
+      console.log('[API Interceptor] 请求URL:', config.url);
+      console.log('[API Interceptor] 请求方法:', config.method);
+      console.log('[API Interceptor] 请求体（原始）:', config.data);
+      if (config.data) {
+        try {
+          const requestBody = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+          console.log('[API Interceptor] 请求体（解析后）:', JSON.stringify(requestBody, null, 2));
+          console.log('[API Interceptor] 请求体包含的字段:', Object.keys(requestBody));
+          console.log('[API Interceptor] 🔍 id字段是否存在？', 'id' in requestBody ? '❌ 存在（错误！）' : '✅ 不存在（正确）');
+          console.log('[API Interceptor] 🔍 userId字段是否存在？', 'userId' in requestBody ? '❌ 存在（错误！）' : '✅ 不存在（正确）');
+        } catch (e) {
+          console.warn('[API Interceptor] 无法解析请求体:', e);
+        }
+      }
+    }
+    
     return config;
   },
   error => {
