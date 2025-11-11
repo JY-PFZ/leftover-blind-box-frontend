@@ -397,7 +397,7 @@ async function processPayment() {
 
     if (orderResponse.data?.code != 20000 || !orderResponse.data?.data) {
       console.error("❌ Failed to create order:", orderResponse.data);
-      alert(`创建订单失败: ${orderResponse.data?.message || 'Unknown error from server'}`);
+      alert(`Failed to create order: ${orderResponse.data?.message || 'Unknown error from server'}`);
       isProcessing.value = false;
       return;
     }
@@ -405,11 +405,11 @@ async function processPayment() {
     const newOrder = orderResponse.data.data;
     const orderId = newOrder.id || newOrder.orderId;
     console.log("✅ Order created successfully:", newOrder);
-    console.log("订单ID:", orderId);
+    console.log("Order ID:", orderId);
 
     if (!orderId) {
       console.error("❌ Order ID is missing:", newOrder);
-      alert('订单创建成功，但无法获取订单ID，请联系客服');
+      alert('Order created, but failed to get Order ID. Please contact support.');
       isProcessing.value = false;
       return;
     }
@@ -447,24 +447,24 @@ async function processPayment() {
       window.location.href = checkoutUrl;
     } else {
       console.error("❌ Failed to create checkout session:", paymentResponse.data);
-      console.error("响应详情:", {
+      console.error("Response details:", {
         success: paymentResponse.data?.success,
         code: paymentResponse.data?.code,
         checkoutUrl: paymentResponse.data?.checkoutUrl || paymentResponse.data?.data?.checkoutUrl,
         message: paymentResponse.data?.message
       });
-      alert(`创建支付会话失败: ${paymentResponse.data?.message || 'Unknown error'}`);
+      alert(`Failed to create checkout session: ${paymentResponse.data?.message || 'Unknown error'}`);
       isProcessing.value = false;
     }
 
   } catch (error) {
     console.error('❌ Error during payment processing:', error);
-    console.error('错误详情:', {
+    console.error('Error details:', {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data
     });
-    alert(`支付处理失败: ${error.response?.data?.message || error.message || 'Please try again.'}`);
+    alert(`Payment failed: ${error.response?.data?.message || error.message || 'Please try again.'}`);
     isProcessing.value = false;
   }
 }

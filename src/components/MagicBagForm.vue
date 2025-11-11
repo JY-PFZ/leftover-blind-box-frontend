@@ -198,14 +198,14 @@ const handleSubmit = async () => {
       const dateStr = dataToSend.availableDate.trim();
       // 检查是否是有效的日期格式 YYYY-MM-DD
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        errorMessage.value = '日期格式错误，请使用 YYYY-MM-DD 格式（如：2025-01-01）';
+        errorMessage.value = 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-01-01).';
         isSubmitting.value = false;
         return;
       }
       // 验证年份是否合理（1000-9999）
       const year = parseInt(dateStr.split('-')[0]);
       if (year < 1000 || year > 9999) {
-        errorMessage.value = '年份必须在 1000-9999 之间';
+        errorMessage.value = 'Year must be between 1000 and 9999.';
         isSubmitting.value = false;
         return;
       }
@@ -222,17 +222,17 @@ const handleSubmit = async () => {
     // 🔧 验证时间格式
     // pickupStartTime 和 pickupEndTime 应该是 HH:MM 格式
     if (dataToSend.pickupStartTime && !/^\d{2}:\d{2}$/.test(dataToSend.pickupStartTime)) {
-      errorMessage.value = '自提开始时间格式错误，请使用 HH:MM 格式（如：18:00）';
+      errorMessage.value = 'Invalid pickup start time. Please use HH:MM (e.g., 18:00).';
       isSubmitting.value = false;
       return;
     }
     if (dataToSend.pickupEndTime && !/^\d{2}:\d{2}$/.test(dataToSend.pickupEndTime)) {
-      errorMessage.value = '自提结束时间格式错误，请使用 HH:MM 格式（如：20:00）';
+      errorMessage.value = 'Invalid pickup end time. Please use HH:MM (e.g., 20:00).';
       isSubmitting.value = false;
       return;
     }
     
-    console.log('[MagicBagForm] 准备提交的数据:', JSON.stringify(dataToSend, null, 2));
+    console.log('[MagicBagForm] Ready to submit data:', JSON.stringify(dataToSend, null, 2));
 
   try {
     let result;
