@@ -299,6 +299,16 @@ const emptyVisible = ref(false);
 const summaryVisible = ref(false);
 const cardVisible = ref({});
 
+function animateCards() {
+  if (cart.items && cart.items.length > 0) {
+    cart.items.forEach((_, index) => {
+      setTimeout(() => {
+        cardVisible.value[index] = true;
+      }, index * 50);
+    });
+  }
+}
+
 // Debug Watcher
 watch(() => cart.items, (newItems) => {
   console.log('[CartView Debug] cart.items changed!');
@@ -316,16 +326,6 @@ watch(() => cart.items, (newItems) => {
     animateCards();
   }
 }, { deep: true, immediate: true });
-
-const animateCards = () => {
-  if (cart.items && cart.items.length > 0) {
-    cart.items.forEach((_, index) => {
-      setTimeout(() => {
-        cardVisible.value[index] = true;
-      }, index * 50);
-    });
-  }
-};
 
 onMounted(() => {
   if (user.isLoggedIn) {
