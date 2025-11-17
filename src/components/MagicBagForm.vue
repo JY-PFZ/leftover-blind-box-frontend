@@ -1,6 +1,5 @@
 <template>
-  <!-- 简单的模态框容器 (需要配合 Modal 组件或 CSS 实现显示/隐藏) -->
-  <div v-if="show" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+  <div v-if="show" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-[9999] p-4">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-white p-5 border-b border-gray-200 z-10">
         <h2 class="text-2xl font-bold text-gray-800">{{ isEditing ? 'Edit Magic Bag' : 'Add New Magic Bag' }}</h2>
@@ -49,28 +48,28 @@
                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
         
-        <!-- Available Date (Optional based on backend DTO) -->
+        <!-- Available Date -->
         <div>
           <label for="availableDate" class="block text-sm font-medium text-gray-700">Available Date</label>
           <input type="date" id="availableDate" v-model="formData.availableDate"
                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
-        <!-- Category (Optional based on backend DTO) -->
+        <!-- Category -->
         <div>
           <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
           <input type="text" id="category" v-model="formData.category" placeholder="e.g., Bakery, Groceries"
                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
-        <!-- Image URL (Optional based on backend DTO) -->
+        <!-- Image URL -->
         <div>
           <label for="imageUrl" class="block text-sm font-medium text-gray-700">Image URL</label>
           <input type="url" id="imageUrl" v-model="formData.imageUrl" placeholder="https://example.com/image.jpg"
                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
-        <!-- Is Active (Only for Editing) -->
+        <!-- Is Active -->
         <div v-if="isEditing">
           <label class="flex items-center">
             <input type="checkbox" v-model="formData.isActive" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
@@ -104,38 +103,45 @@ import { ref, watch, reactive, computed } from 'vue';
 import { useMagicBagStore } from '@/stores/magicBag';
 
 const props = defineProps({
-  show: Boolean, // Controls modal visibility
-  bagToEdit: { // Pass the bag object if editing
+  show: Boolean, 
+  bagToEdit: {
     type: Object,
     default: null
   }
 });
 
-const emit = defineEmits(['close', 'saved']); // Events emitted by the component
+const emit = defineEmits(['close', 'saved']); 
 
 const magicBagStore = useMagicBagStore();
 const isSubmitting = ref(false);
 const errorMessage = ref('');
 
-// Reactive form data object
 const formData = reactive({
-  id: null, // Only used for editing
+  id: null,
   title: '',
   description: '',
   price: null,
   quantity: null,
-  pickupStartTime: '', // Format should be HH:MM
-  pickupEndTime: '',   // Format should be HH:MM
-  availableDate: '', // Format should be YYYY-MM-DD
+  pickupStartTime: '', 
+  pickupEndTime: '',   
+  availableDate: '', 
   category: '',
   imageUrl: '',
-  isActive: true, // Default for new bags
-  // merchantId will be added by the store action
+  isActive: true, 
 });
 
 const isEditing = computed(() => !!props.bagToEdit);
 
-// Reset form to default state
+// 🔧 辅助函数：格式化时间，确保去掉秒数 (HH:mm:ss -> HH:mm)
+const formatTime = (timeStr) => {
+  if (!timeStr) return '';
+  // 如果包含秒 (例如 18:00:00)，截取前5位
+  if (timeStr.length > 5) {
+    return timeStr.substring(0, 5);
+  }
+  return timeStr;
+};
+
 const resetForm = () => {
   formData.id = null;
   formData.title = '';
@@ -147,80 +153,69 @@ const resetForm = () => {
   formData.availableDate = '';
   formData.category = '';
   formData.imageUrl = '';
-  formData.isActive = true; // Default for new
+  formData.isActive = true; 
   errorMessage.value = '';
   isSubmitting.value = false;
 };
 
-// Watch for changes in bagToEdit to populate form for editing
+// 监听 bagToEdit 变化，填充表单
 watch(() => props.bagToEdit, (newBag) => {
   if (newBag) {
     formData.id = newBag.id;
     formData.title = newBag.title || '';
     formData.description = newBag.description || '';
-    formData.price = newBag.price != null ? parseFloat(newBag.price) : null; // Ensure price is number
-    formData.quantity = newBag.quantity != null ? parseInt(newBag.quantity, 10) : null; // Ensure quantity is int
-    formData.pickupStartTime = newBag.pickupStartTime || ''; // Assuming backend provides HH:MM
-    formData.pickupEndTime = newBag.pickupEndTime || '';   // Assuming backend provides HH:MM
-    formData.availableDate = newBag.availableDate ? newBag.availableDate.split('T')[0] : ''; // Format date YYYY-MM-DD
+    formData.price = newBag.price != null ? parseFloat(newBag.price) : null;
+    formData.quantity = newBag.quantity != null ? parseInt(newBag.quantity, 10) : null;
+    
+    // 🔧 [FIX] 使用 formatTime 去掉秒数，解决 time input 显示异常问题
+    formData.pickupStartTime = formatTime(newBag.pickupStartTime);
+    formData.pickupEndTime = formatTime(newBag.pickupEndTime);
+    
+    formData.availableDate = newBag.availableDate ? newBag.availableDate.split('T')[0] : '';
     formData.category = newBag.category || '';
     formData.imageUrl = newBag.imageUrl || '';
     formData.isActive = newBag.isActive !== undefined ? newBag.isActive : true; 
   } else {
-    resetForm(); // Reset if no bag is passed (for adding new)
+    resetForm(); 
   }
-}, { immediate: true }); // Run immediately when component mounts or prop changes
+}, { immediate: true });
 
-// Handle form submission
 const handleSubmit = async () => {
   isSubmitting.value = true;
   errorMessage.value = '';
 
-  // Prepare data for API (exclude ID for creation)
   const dataToSend = { ...formData };
   if (!isEditing.value) {
-    delete dataToSend.id; // Don't send id when creating
-    delete dataToSend.isActive; // isActive is usually set by default on creation
+    delete dataToSend.id;
+    delete dataToSend.isActive;
   } else {
-    // For update, only send isActive if it exists in the form
     if (formData.isActive === undefined) delete dataToSend.isActive;
   }
     
-    // 🔧 确保数据类型正确
-   // Ensure price is a number
    if (dataToSend.price != null) dataToSend.price = parseFloat(dataToSend.price);
    if (dataToSend.quantity != null) dataToSend.quantity = parseInt(dataToSend.quantity, 10);
 
-    // 🔧 验证和格式化日期
-    // availableDate 应该是 YYYY-MM-DD 格式
-    if (dataToSend.availableDate) {
-      // 如果日期格式不正确，尝试修复
-      const dateStr = dataToSend.availableDate.trim();
-      // 检查是否是有效的日期格式 YYYY-MM-DD
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        errorMessage.value = 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-01-01).';
-        isSubmitting.value = false;
-        return;
-      }
-      // 验证年份是否合理（1000-9999）
-      const year = parseInt(dateStr.split('-')[0]);
-      if (year < 1000 || year > 9999) {
-        errorMessage.value = 'Year must be between 1000 and 9999.';
-        isSubmitting.value = false;
-        return;
-      }
-      dataToSend.availableDate = dateStr; // 确保格式正确
-    } else {
-      // 如果没有日期，设置为今天的日期
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      dataToSend.availableDate = `${year}-${month}-${day}`;
-    }
+   if (dataToSend.availableDate) {
+     const dateStr = dataToSend.availableDate.trim();
+     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+       errorMessage.value = 'Invalid date format. Please use YYYY-MM-DD (e.g., 2025-01-01).';
+       isSubmitting.value = false;
+       return;
+     }
+     dataToSend.availableDate = dateStr; 
+   } else {
+     const today = new Date();
+     const year = today.getFullYear();
+     const month = String(today.getMonth() + 1).padStart(2, '0');
+     const day = String(today.getDate()).padStart(2, '0');
+     dataToSend.availableDate = `${year}-${month}-${day}`;
+   }
     
-    // 🔧 验证时间格式
-    // pickupStartTime 和 pickupEndTime 应该是 HH:MM 格式
+    // 🔧 [FIX] 提交前再次确保时间格式为 HH:mm
+    dataToSend.pickupStartTime = formatTime(dataToSend.pickupStartTime);
+    dataToSend.pickupEndTime = formatTime(dataToSend.pickupEndTime);
+
+    // 验证时间格式
     if (dataToSend.pickupStartTime && !/^\d{2}:\d{2}$/.test(dataToSend.pickupStartTime)) {
       errorMessage.value = 'Invalid pickup start time. Please use HH:MM (e.g., 18:00).';
       isSubmitting.value = false;
@@ -243,8 +238,8 @@ const handleSubmit = async () => {
     }
 
     if (result.success) {
-      emit('saved'); // Notify parent that save was successful
-      emit('close');  // Close the modal
+      emit('saved');
+      emit('close'); 
     } else {
       errorMessage.value = result.message || 'An error occurred.';
     }
@@ -255,10 +250,8 @@ const handleSubmit = async () => {
   }
 };
 
-// Reset form when modal is closed
 watch(() => props.show, (newValue) => {
   if (!newValue) {
-    // Delay reset slightly to avoid flicker if just reopened
     setTimeout(resetForm, 300); 
   }
 });
@@ -266,7 +259,6 @@ watch(() => props.show, (newValue) => {
 </script>
 
 <style scoped>
-/* Scoped styles for the form if needed */
 /* Basic modal styling */
 .fixed { position: fixed; }
 .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
@@ -274,7 +266,7 @@ watch(() => props.show, (newValue) => {
 .flex { display: flex; }
 .items-center { align-items: center; }
 .justify-center { justify-content: center; }
-.z-50 { z-index: 50; }
+/* .z-50 { z-index: 50; } Removed in favor of z-[9999] utility class */
 .p-4 { padding: 1rem; }
 .bg-white { background-color: #fff; }
 .rounded-lg { border-radius: 0.5rem; }
@@ -307,8 +299,6 @@ watch(() => props.show, (newValue) => {
 .rounded-md { border-radius: 0.375rem; }
 .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
 .focus\:outline-none:focus { outline: 2px solid transparent; outline-offset: 2px; }
-/* Add more Tailwind classes converted to CSS if needed */
-
 .bg-gray-800 { background-color: #1f2937; }
 .pt-5 { padding-top: 1.25rem; }
 .justify-end { justify-content: flex-end; }

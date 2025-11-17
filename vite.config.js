@@ -15,7 +15,7 @@ export default defineConfig({
       // 统一以 /api 开头发起请求
       '/api': {
         // 🔧 使用云服务器后端地址
-        target: 'http://52.77.254.95:10015',
+        target: 'http://3.1.84.220:10016',
         changeOrigin: true,
         secure: false,
         // 你的后端 Controller 是以 /auth /user /product/... 开头，没有 /api 前缀
@@ -30,7 +30,7 @@ export default defineConfig({
           proxy.on('error', (err, req, res) => {
             console.error('[proxy] ❌ Proxy error:', err.message)
             console.error('[proxy] Request URL:', req.url)
-            console.error('[proxy] Target:', 'http://52.77.254.95:10015')
+            console.error('[proxy] Target:', 'http://3.1.84.220:10016')
             console.error('[proxy] 请检查云服务器后端是否可访问！')
           })
           proxy.on('proxyRes', (proxyRes, req, res) => {

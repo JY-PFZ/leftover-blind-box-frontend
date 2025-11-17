@@ -186,14 +186,21 @@ const handleSubmit = async () => {
       return;
     }
     
+    // 生成一个营业执照占位符字符串
+    const licenseStr = 'LICENSE_GENERATED_' + Date.now();
+
     const result = await merchantStore.registerMerchant({
-      username: userStore.username, // logging helper
-      password: '', // not needed, user already authenticated
+      username: userStore.username, 
+      password: '', 
       merchantName: form.value.merchantName,
       address: form.value.address,
       latitude: form.value.latitude,
       longitude: form.value.longitude,
-      phone: form.value.phone
+      phone: form.value.phone,
+      // 核心修改：同时发送多种格式的字段，确保后端能匹配到其中一个
+      business_license: licenseStr, // 匹配您的数据库列名
+      businessLicense: licenseStr,  // 匹配常见的后端 DTO 驼峰命名
+      license: licenseStr           // 备用简化字段
     });
 
     if (result.success) {

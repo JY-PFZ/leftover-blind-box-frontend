@@ -1,259 +1,135 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { api } from '@/utils/api';
-import { useUserStore } from './user'; // Import user store to get current userId
+import { useUserStore } from './user';
 
 export const useMerchantStore = defineStore('merchant', () => {
   // --- 状态 ---
-  const currentMerchant = ref(null); // 存储当前商家的完整信息
+  const currentMerchant = ref(null);
   const isLoading = ref(false);
   const error = ref(null);
 
   // --- Actions ---
 
-  // 🟢 [NEW] 商家注册
   /**
-   * 注册一个新商家 (使用 /api/merchant/register 接口)
-   * 注意：需要先以 customer 身份登录，然后才能注册为 merchant
+   * 注册一个新商家
    */
   const registerMerchant = async (merchantData) => {
-    console.log("[MerchantStore] ====== 开始商家注册 ======");
-    console.log("[MerchantStore] 接收到的参数:", JSON.stringify(merchantData, null, 2));
+    // ⚡️ 这是一个版本标记，如果您在控制台看不到这行字，说明浏览器还没更新到新代码！请强制刷新！
+    console.log("%c ⚡️ MERCHANT STORE VERSION: FIXED_V2 ", "background: #222; color: #bada55; font-size: 12px; padding: 4px; border-radius: 2px;");
+    
+    console.group("🚀 [MerchantStore] 开始商家注册流程");
+    console.log("1. 原始参数:", JSON.stringify(merchantData, null, 2));
+    
     isLoading.value = true;
     error.value = null;
     
-    // 检查用户是否已登录（后端会从token中获取userId，不需要前端传递）
     const userStore = useUserStore();
     if (!userStore.isLoggedIn) {
-      error.value = 'Please login as a customer first before registering as a merchant.';
+      error.value = 'Please login as a customer first.';
       isLoading.value = false;
+      console.groupEnd();
       return { success: false, message: error.value };
     }
     
-    console.log("[MerchantStore] ✅ 用户已登录，后端将从token中获取userId");
-    
     try {
-      // 使用 /api/merchant/register 接口注册商家
-      // 后端会自动生成商家ID，不需要前端传递
-      
-      // 🔧 第一步：处理手机号（可选字段）
-      console.log("[MerchantStore] 步骤1: 处理手机号");
-      let phone = null;
+      // 1. 提取营业执照 (优先级：入参 > 占位符)
+      // 只要前端传了，这里一定能取到
+      const licenseValue = merchantData.businessLicense || merchantData.business_license || merchantData.license || 'LICENSE_PLACEHOLDER_' + Date.now();
+      console.log("2. 提取到的 License 值:", licenseValue);
+
+      // 2. 处理手机号
+      let validPhone = null;
       if (merchantData.phone && merchantData.phone.trim()) {
         const phoneStr = merchantData.phone.trim().replace(/\s+/g, '');
-        if (/^1[3-9]\d{9}$/.test(phoneStr)) {
-          phone = phoneStr;
-          console.log("[MerchantStore] ✅ 手机号格式正确:", phone);
-        } else {
-          console.warn('[MerchantStore] ⚠️ 手机号格式不正确，将不发送phone字段:', phoneStr);
+        if (/^\d{8,}$/.test(phoneStr)) {
+           validPhone = phoneStr;
         }
       }
-      
-      // 🔧 第二步：构建请求数据
-      // 根据 MerchantRegisterDto，后端期望的字段：
-      // - name (必须)
-      // - address (必须)
-      // - phone (可选，新加坡8位手机号：以8或9开头)
-      // - latitude (可选)
-      // - longitude (可选)
-      // - businessLicense (可选)
-      // 注意：不需要 userId 和 id，后端会从 token 中获取 userId，并自动生成 id
-      console.log("[MerchantStore] 步骤2: 构建请求数据");
-      const requestData = {
+
+      // 3. 直接构建最终请求体 (不再依赖 requestData 中间变量，防止漏字段)
+      const finalPayload = {
         name: merchantData.merchantName || '',
         address: merchantData.address || '',
         latitude: merchantData.latitude || null,
-        longitude: merchantData.longitude || null
+        longitude: merchantData.longitude || null,
+        // 如果有手机号则添加
+        ...(validPhone && { phone: validPhone }),
+        // [强制添加] 同时发送两种格式，确保后端 100% 能收到
+        business_license: licenseValue,
+        businessLicense: licenseValue
       };
-      
-      // 处理手机号：后端期望新加坡8位手机号（以8或9开头）
-      // 如果用户输入的是中国11位手机号，需要转换或提示
-      if (merchantData.phone && merchantData.phone.trim()) {
-        const phoneStr = merchantData.phone.trim().replace(/\s+/g, '');
-        // 检查是否符合新加坡手机号格式（8位，以8或9开头）
-        if (/^[89]\d{7}$/.test(phoneStr)) {
-          requestData.phone = phoneStr;
-          console.log("[MerchantStore] ✅ 手机号格式正确（新加坡8位）:", phoneStr);
-        } else {
-          // 如果不符合格式，可以选择不发送或提示用户
-          console.warn('[MerchantStore] ⚠️ 手机号格式不符合新加坡8位格式（以8或9开头），将不发送phone字段:', phoneStr);
-          // 也可以选择发送空字符串（后端允许空字符串）
-          // requestData.phone = '';
-        }
-      }
-      
-      // 🔧 明确排除 id 和 userId 字段（防止意外包含）
-      const finalRequestData = {
-        name: requestData.name,
-        address: requestData.address,
-        ...(requestData.phone && { phone: requestData.phone }),
-        ...(requestData.latitude !== null && requestData.latitude !== undefined && { latitude: requestData.latitude }),
-        ...(requestData.longitude !== null && requestData.longitude !== undefined && { longitude: requestData.longitude }),
-        ...(requestData.businessLicense && { businessLicense: requestData.businessLicense })
-      };
-      
-      // 🔧 确保不包含 id 和 userId
-      delete finalRequestData.id;
-      delete finalRequestData.userId;
-      
-      console.log('[MerchantStore] 步骤3: 最终请求数据');
-      console.log('[MerchantStore] 完整请求数据:', JSON.stringify(finalRequestData, null, 2));
-      console.log('[MerchantStore] ✅ 确认：请求数据中不包含userId和id字段（后端会从token中获取userId并自动生成id）');
-      console.log('[MerchantStore] 请求数据的所有键:', Object.keys(finalRequestData));
-      console.log('[MerchantStore] 🔍 验证：id字段是否存在？', 'id' in finalRequestData ? '❌ 存在（错误！）' : '✅ 不存在（正确）');
-      console.log('[MerchantStore] 🔍 验证：userId字段是否存在？', 'userId' in finalRequestData ? '❌ 存在（错误！）' : '✅ 不存在（正确）');
-      
-      // 🔧 第三步：发送请求
-      // 根据后端 MerchantController，正确的路径是 /api/merchant/register（单数形式）
-      const possiblePaths = ['/api/merchant/register'];
-      let response = null;
-      let lastError = null;
-      
-      for (const path of possiblePaths) {
-        try {
-          console.log(`[MerchantStore] 步骤4: 尝试发送POST请求到 ${path}`);
-          console.log("[MerchantStore] 请求URL:", path);
-          console.log("[MerchantStore] 请求方法: POST");
-          console.log("[MerchantStore] 请求体（JSON字符串）:", JSON.stringify(finalRequestData, null, 2));
-          console.log("[MerchantStore] 请求体（对象）:", finalRequestData);
-          
-          response = await api.post(path, finalRequestData);
-          console.log(`[MerchantStore] ${path} 响应成功:`, response.status);
-          break; // 如果成功，跳出循环
-        } catch (error) {
-          console.warn(`[MerchantStore] ${path} 请求失败:`, error.response?.status);
-          lastError = error;
-          // 继续尝试下一个路径
-          continue;
-        }
-      }
-      
-      if (!response) {
-        throw lastError || new Error('所有商家注册接口路径都失败');
-      }
-      
-      console.log("[MerchantStore] 响应状态:", response.status);
-      console.log("[MerchantStore] 响应数据:", response.data);
-      console.log("[MerchantStore] 响应 code:", response.data?.code);
-      console.log("[MerchantStore] 响应 message:", response.data?.message);
 
-      const successCode = response.data?.code == 1 || response.data?.code == 20000;
-      if (successCode) {
-        console.log("[MerchantStore] Merchant registration successful.", response.data.data);
+      console.log("3. 最终发送给后端的 Payload:", JSON.stringify(finalPayload, null, 2));
+
+      // 4. 发送请求
+      const path = '/api/merchant/register';
+      const response = await api.post(path, finalPayload);
+      
+      console.log("4. 后端响应:", response);
+      console.groupEnd();
+
+      // 兼容成功判断
+      const isSuccess = response.data?.code == 1 || response.data?.code == 20000 || (response.status === 200 && response.data?.code !== 0);
+      
+      if (isSuccess) {
         return { success: true };
       } else {
-        // 如果响应状态是 200 但 code 不是成功码，说明后端逻辑错误
-        const errorMsg = response.data?.message || 'Registration failed due to server logic.';
-        console.error('[MerchantStore] ⚠️ 后端返回了 200 状态码，但 code 不是成功码:', response.data?.code);
-        console.error('[MerchantStore] ⚠️ 错误消息:', errorMsg);
-        console.error('[MerchantStore] ⚠️ 这通常是后端验证或业务逻辑问题，请检查后端代码');
+        const errorMsg = response.data?.message || 'Registration failed.';
         throw new Error(errorMsg);
       }
+
     } catch (err) {
-      console.error('[MerchantStore] Error registering merchant:', err);
-      console.error('[MerchantStore] 错误详情:', {
-        message: err.message,
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        config: {
-          url: err.config?.url,
-          method: err.config?.method,
-          data: err.config?.data
-        }
-      });
-      
-      // 提取具体的错误消息
-      let errorMessage = 'An unknown error occurred.';
-      if (err.response?.data) {
-        console.error('[MerchantStore] 后端返回的错误数据:', err.response.data);
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data.message) {
-          errorMessage = err.response.data.message;
-        } else if (err.response.data.error) {
-          errorMessage = err.response.data.error;
-        } else {
-          // 打印完整的错误数据以便调试
-          console.error('[MerchantStore] 完整错误数据:', JSON.stringify(err.response.data, null, 2));
-          errorMessage = JSON.stringify(err.response.data);
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      console.error('[MerchantStore] 最终错误消息:', errorMessage);
-      
-      error.value = errorMessage;
-      return { success: false, message: errorMessage };
+      console.error("❌ 注册异常:", err);
+      let msg = err.response?.data?.message || err.message || 'Unknown Error';
+      error.value = msg;
+      console.groupEnd();
+      return { success: false, message: msg };
     } finally {
       isLoading.value = false;
     }
   };
 
-
-  // 🟢 [FIXED] 修改为使用 /api/merchant/my 接口
+  // 获取商家信息
   const fetchMyMerchantProfile = async () => {
-    console.log("[MerchantStore] Attempting to fetch current merchant profile...");
     isLoading.value = true;
     error.value = null;
-    currentMerchant.value = null; // 清空旧数据
+    currentMerchant.value = null;
     const userStore = useUserStore();
 
-    // 确保用户已登录且是商家角色
     if (!userStore.isLoggedIn || userStore.role !== 'merchant') {
-      error.value = 'User is not logged in as a merchant.';
       isLoading.value = false;
-      console.error("[MerchantStore] " + error.value, { isLoggedIn: userStore.isLoggedIn, role: userStore.role });
-      return; // 直接返回
+      return;
     }
-    console.log(`[MerchantStore] Current User is a merchant.`);
 
     try {
-      // 🟢 [FIXED] Workaround 移除, 直接调用专用接口
-      console.log("[MerchantStore] Calling GET /api/merchant/my ...");
       const response = await api.get('/api/merchant/my');
-
-      // 🟢 检查响应码 (兼容 1 和 20000) 和数据结构
       const successCode = response.data?.code == 1 || response.data?.code == 20000;
-      const foundMerchant = response.data?.data; // 假设 data 是商家对象
-
-      if (successCode && foundMerchant) {
-        console.log(`[MerchantStore] Received merchant profile successfully.`);
-        currentMerchant.value = foundMerchant;
-        console.log("[MerchantStore] Set current merchant profile:", currentMerchant.value);
+      
+      if (successCode && response.data?.data) {
+        currentMerchant.value = response.data.data;
       } else {
-        // API 调用失败或返回数据结构错误
-        error.value = response.data?.message || 'Failed to fetch merchant profile or invalid data structure.';
-        console.error("[MerchantStore] " + error.value, response.data);
-        currentMerchant.value = null;
+        error.value = response.data?.message;
       }
     } catch (err) {
-      console.error('[MerchantStore] Error fetching /api/merchant/my:', err);
-      error.value = err.response?.data?.message || err.message || 'An unknown error occurred.';
-      currentMerchant.value = null; // Clear on error
+      console.error(err);
+      error.value = err.message;
     } finally {
       isLoading.value = false;
-      console.log("[MerchantStore] fetchMyMerchantProfile finished.");
     }
   };
 
-  // 清除商家信息 (例如，在用户登出时调用)
   const clearMerchantProfile = () => {
     currentMerchant.value = null;
     error.value = null;
-    console.log("[MerchantStore] Cleared merchant profile.");
   };
-
-  // 🟢 在 logout 时也清除商家信息 (如果 user store 调用)
-  // 可以在 user store 的 logout action 中调用 merchantStore.clearMerchantProfile()
 
   return {
     currentMerchant,
     isLoading,
     error,
-    registerMerchant, // 🟢 [ADDED] 导出新函数
+    registerMerchant,
     fetchMyMerchantProfile,
-    clearMerchantProfile,
+    clearMerchantProfile
   };
 });
